@@ -95,11 +95,6 @@ const pubProvider = new RefreshableAuthProvider(
 
 // start api client
 const twitch = new ApiClient({ authProvider: mainProvider });
-twitch.helix.users.getUserByName('vertiKarl').then(tmp => {
-  console.log(tmp)
-}).catch(e => {
-  console.log(e)
-})
 
 // start chat client
 const chat = new ChatClient(mainProvider, { channels: config.channels })
