@@ -16,6 +16,9 @@ process.on('message', (msg) => {
       .then((clip) => {
         let link = clip.thumbnailUrl.split('-preview')[0]+'.mp4'
         dhl.get(link).pipe(F.createWriteStream(`./plugins/discord/clips/${clip.id}.mp4`)).on('finish', () => {
+                  // legacy copy for my website alleshusos.de will be gone in the website rework
+                  F.copyFileSync(`./plugins/discord/clips/${clip.id}.mp4`, `../alleshusos.de/private/clips/${clip.id}.mp4`)
+                  F.copyFileSync(`./plugins/discord/clips/${clip.id}.json`, `../alleshusos.de/private/clips/${clip.id}.json`)
                   F.writeFileSync(`./plugins/discord/clips/${clip.id}.json`, JSON.stringify(clip, null, 4))
                   console.log("discordDL", `Successfully downloaded clip "${clip.title}" from channel ${clip.broadcasterDisplayName}.\nYou can find it here: https://alleshusos.de/private/clips/${clip.id}.mp4`)
                 })
