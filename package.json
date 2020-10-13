@@ -1,0 +1,16 @@
+{
+  "name": "hahnrich4",
+  "version": "1.0.0",
+  "description": "the latest rework of my hahnrich bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "vertikarl",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "twitch": "^4.2.6",
+    "twitch-chat-client": "^4.2.6",
+    "twitch-pubsub-client": "^4.2.6"
+  }
+}
