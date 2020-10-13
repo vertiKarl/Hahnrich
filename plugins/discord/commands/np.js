@@ -1,7 +1,7 @@
 const discord = require('discord.js')
 module.exports = function(client, message, args) {
+  let streamtimeformat
   if(client.mediaPlayer.connection && client.mediaPlayer.connection.dispatcher) {
-    let streamtimeformat
     length = {
       total: parseInt((client.mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
       after: parseInt((client.mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
