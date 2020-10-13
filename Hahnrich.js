@@ -54,9 +54,13 @@ module.exports = class Hahnrich {
     console.error = function() {
       let time = new Date()
       let error = [`\u001b[1m\u001b[41;1m\u001b[38;5;231mE\x1b[0m [${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}]`, `[\x1b[36m${'Hahnrich'}\x1b[0m]`]
+      let log = []
       for(let arg in arguments) {
         error.push(arguments[arg])
+        log.push(arguments[arg])
       }
+      let date = new Date().toTimeString().split(' ')[0]
+      F.appendFile('latest.log', `[${date}] ` + log.join('\n').split("\n").join(`\n[${date}] `), () => {})
       ce.apply( console, error)
     }
     // fancy console debug
@@ -78,7 +82,8 @@ module.exports = class Hahnrich {
       if(e.code === "ENOENT") {
         console.log('creating config file')
         const configTemplate = {
-          "ignorePlugins": ["test.js"]
+          "ignorePlugins": ["test.js"],
+          "pluginSettings": {}
         }
         F.writeFileSync('./config.json', JSON.stringify(configTemplate, null, 4))
         this.config = configTemplate;
@@ -103,15 +108,26 @@ module.exports = class Hahnrich {
       const plugin = child.fork(`./plugins/${file}`, {silent: true})
       this.plugins.set(name, plugin)
       plugin.on('message', (msg) => {
-        console.module(name, msg)
+        let com = msg.split(' ')
+        if(com[0] === "twitchDL") {
+          com.splice(0, 1)
+          this.plugins.get('twitch').send(com)
+        } else if(com[0] === "discordDL") {
+          com.splice(0, 1)
+          this.plugins.get('discord').send(com)
+        } else {
+          try{
+            msg = JSON.parse(msg)
+          } catch {}
+          console.module(name, msg)
+        }
       })
       plugin.stderr.on('data', (err) => {
-        console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+err+"\u001b[0m")
-        if(recursion+1 < this.MAX_RECURSION) {
-          this.startPlugin(file, recursion+1)
-        } else {
-          console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+"MAX RECURSION REACHED, STOPPING PROCESS"+"\u001b[0m")
-        }
+        console.error(`ERROR IN PLUGIN ${name}\n`+err)
+        plugin.kill()
+      })
+      plugin.on("close", (code) => {
+        recursion < this.MAX_RECURSION ? this.startPlugin(file, recursion+1) : console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+"MAX RECURSION REACHED, EXITING"+"\u001b[0m")
       })
       console.log(`Successfully started ${name}`)
     } catch(e) {

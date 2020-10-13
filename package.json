@@ -9,6 +9,10 @@
   "author": "vertikarl",
   "license": "GPL-3.0",
   "dependencies": {
+    "@discordjs/opus": "^0.3.2",
+    "discord.js": "^12.3.1",
+    "music-metadata": "^7.4.0",
+    "postman-request": "^2.88.1-postman.26",
     "twitch": "^4.2.6",
     "twitch-chat-client": "^4.2.6",
     "twitch-pubsub-client": "^4.2.6"

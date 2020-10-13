@@ -1,0 +1,5 @@
+node_modules/
+.git/
+config.json
+plugins/discord/songs/*
+plugins/discord/clips/*
