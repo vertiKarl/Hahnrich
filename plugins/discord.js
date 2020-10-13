@@ -45,7 +45,7 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   client.user.setPresence({
         activity: {
-          name: 'Version 4 - Beta',
+          name: `Version ${require('../package.json').version}`,
           type: "STREAMING",
           url: 'https://twitch.tv/vertiKarl'
         },
@@ -107,7 +107,7 @@ client.on('ready', () => {
     },
     skip: function() {
       this.repeat = false
-      next()
+      this.next()
     },
     shuffle: function() {
       let currentIndex = this.queue.length, temporaryValue, randomIndex;
