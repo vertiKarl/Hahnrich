@@ -4,6 +4,9 @@ module.exports = function(client, message, args) {
   client.voice.connections.forEach(con => {
     if(!found && con.channel.guild === message.guild)
       found = true
+      client.mediaPlayer.connection = undefined;
+      client.mediaPlayer.queue = [];
+      client.mediaPlayer.now_playing = ''
       con.disconnect()
   })
 }

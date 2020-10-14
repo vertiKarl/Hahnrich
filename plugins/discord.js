@@ -91,7 +91,9 @@ client.on('ready', () => {
         } else {
           this.now_playing = ""
           this.leaveTimer = setTimeout(() => {
+            this.queue = [];
             this.connection.disconnect()
+            this.connection = undefined;
           }, 20 /*Minutes*/ * 60 /*Seconds*/ * 1000 /*Milliseconds*/)
           // nothing to play
         }
