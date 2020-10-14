@@ -29,7 +29,7 @@ module.exports = function(client, message, args) {
   .setURL('https://zap-hosting.com/de/shop/donation/b46e5e7b07106dad59febaf3b66fd5e5/')
   .setAuthor('HahnrichJS', 'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/cb/cb9a41873f2065b8010afa7584803d283dd7e6ad_full.jpg', 'https://alleshusos.de')
   .addField(`${client.mediaPlayer.now_playing !== '' ? client.mediaPlayer.now_playing : "not playing anything"}`, `${streamtimeformat}/${typeof client.mediaPlayer.currentLength !== "undefined" ? client.mediaPlayer.currentLength : "0:00"}`)
-  .setFooter(`Queue:\n${queue.length > 2040 ? queue.susbstring(0, 2040) : queue}`)
+  .setFooter(`Queue:\n${queue.length > 1500 ? queue.susbstring(0, 1500) : queue}`)
   message.reply(embed)
   //message.reply(client.mediaPlayer.now_playing + "\nQueue: \n" + client.mediaPlayer.queue.join('\n'))
 }
