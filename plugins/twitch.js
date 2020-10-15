@@ -124,22 +124,22 @@ chat.connect().then(() => {
 });
 
 // start pubsub client
-const pubAPI = new ApiClient({ authProvider: pubProvider });
-const pubsub = new PubSubClient();
-pubsub.registerUserListener(pubAPI).then(async (uid) => {
-  pubsub.onRedemption(uid, (msg) => {
-    msg = msg._data.data.redemption
-    switch(msg.reward.id) {
-      case "67ee6663-6481-42bc-b697-1e6e9ebcdd0a":
-        pubAPI.kraken.channels.startChannelCommercial(uid, 60).then(() => {
-           console.log("successfully ran ad")
-         }).catch((err) => {
-           console.log("error playing ad " + err)
-         })
-        break
-      case "cca8d147-3be9-4f82-8377-ffb314274a01":
-        console.log("SUCCESS")
-        break
-    }
-  })
-})
+// const pubAPI = new ApiClient({ authProvider: pubProvider });
+// const pubsub = new PubSubClient();
+// pubsub.registerUserListener(pubAPI).then(async (uid) => {
+//   pubsub.onRedemption(uid, (msg) => {
+//     msg = msg._data.data.redemption
+//     switch(msg.reward.id) {
+//       case "67ee6663-6481-42bc-b697-1e6e9ebcdd0a":
+//         pubAPI.kraken.channels.startChannelCommercial(uid, 60).then(() => {
+//            console.log("successfully ran ad")
+//          }).catch((err) => {
+//            console.log("error playing ad " + err)
+//          })
+//         break
+//       case "cca8d147-3be9-4f82-8377-ffb314274a01":
+//         console.log("SUCCESS")
+//         break
+//     }
+//   })
+// })
