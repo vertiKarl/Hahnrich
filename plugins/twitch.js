@@ -5,6 +5,17 @@ const { ChatClient } = require('twitch-chat-client');
 const { PubSubClient } = require('twitch-pubsub-client');
 const F = require('fs');
 const dhl = require('postman-request');
+const express = require('express');
+const app = express();
+const http = require('http');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(cors({
+  origin: "http://localhost:6969",
+  optionsSuccessStatus: 200
+}))
 
 process.on('message', (msg) => {
   // handle messages from parent
@@ -42,7 +53,8 @@ function loadConfig(og=false) {
       refreshToken: "",
       MclientID: "",
       MclientSecret: "",
-      channels: []
+      channels: [],
+      key: ""
     }
     F.writeFileSync('config.json', JSON.stringify(cfg, null, 4))
     return og ? cfg : cfg.pluginSettings.twitch;
@@ -98,6 +110,43 @@ const pubProvider = new RefreshableAuthProvider(
 
 // start api client
 const twitch = new ApiClient({ authProvider: mainProvider });
+app.post('/game/:game', (req, res) => {
+  console.log(req.params)
+  const cursor = req.body.cursor;
+  if(req.body.key === config.key) {
+    twitch.helix.streams.getStreams({
+      after: cursor !== "" ? cursor : null,
+      game: req.params.game,
+      type: "live",
+      limit: 25
+    }).then((result) => {
+      console.log('sending result')
+      res.json(result)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
+app.post('/streams/:id', (req, res) => {
+  console.log(req.params)
+  const id = req.params.id
+  if(req.body.key === config.key) {
+    twitch.helix.streams.getStreamByUserId(id)
+    .then((result) => {
+      console.log('sending result')
+      res.json(result)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
+http.createServer(app).listen(8080)
 
 // start chat client
 const chat = new ChatClient(mainProvider, { channels: config.channels })
