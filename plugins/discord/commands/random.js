@@ -1,5 +1,6 @@
 const F = require('fs')
 module.exports = function(client, message, args) {
+  const mediaPlayer = client[message.guild.id]
   // check if user entered amount of random songs
   if(!Number.isNaN(parseInt(args[0]))) {
     args[0] = parseInt(args[0])
@@ -11,18 +12,20 @@ module.exports = function(client, message, args) {
   const songs = F.readdirSync(__dirname + "/../songs")
   // select random songs and push them to the queue
   for(let i = 0; i < args[0]; i++) {
-    client.mediaPlayer.queue.push(songs[Math.floor(Math.random() * songs.length)])
+    mediaPlayer.queue.push(songs[Math.floor(Math.random() * songs.length)])
   }
   // connect to channel if not done yet
-  if(!client.mediaPlayer.connection) {
+  if(!mediaPlayer.connection) {
     require('./join.js')(client, message, args)
     .then((con) => {
-      client.mediaPlayer.connection = con
-      client.mediaPlayer.next()
+      mediaPlayer.connection = con
+      mediaPlayer.next()
     })
     .catch((err) => {
       console.log(err)
       message.reply('failed joining')
     })
+  } else if(mediaPlayer.now_playing === '') {
+    mediaPlayer.next()
   }
 }

@@ -15,6 +15,7 @@
     "postman-request": "^2.88.1-postman.26",
     "twitch": "^4.2.6",
     "twitch-chat-client": "^4.2.6",
-    "twitch-pubsub-client": "^4.2.6"
+    "twitch-pubsub-client": "^4.2.6",
+    "ytdl-core": "^3.4.2"
   }
 }

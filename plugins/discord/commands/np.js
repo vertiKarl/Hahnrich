@@ -1,10 +1,11 @@
 const discord = require('discord.js')
 module.exports = function(client, message, args) {
+  const mediaPlayer = client[message.guild.id]
   let streamtimeformat
-  if(client.mediaPlayer.connection && client.mediaPlayer.connection.dispatcher) {
+  if(mediaPlayer.connection && mediaPlayer.connection.dispatcher) {
     length = {
-      total: parseInt((client.mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
-      after: parseInt((client.mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
+      total: parseInt((mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
+      after: parseInt((mediaPlayer.connection.dispatcher.streamTime/1000).toFixed(0)),
       minutes: 0,
       seconds: 0
     }
@@ -20,16 +21,16 @@ module.exports = function(client, message, args) {
     streamtimeformat = "0:00"
   }
   let queue = "";
-  for(let i = 0; i < client.mediaPlayer.queue.length && i < 5; i++) {
-    queue += `[${i}]` + " " +client.mediaPlayer.queue[i] + "\n"
+  for(let i = 0; i < mediaPlayer.queue.length && i < 5; i++) {
+    queue += `[${i}]` + " " +mediaPlayer.queue[i] + "\n"
   }
   let embed = new discord.MessageEmbed()
   .setColor('#d10202')
   .setTitle('Now Playing:')
   .setURL('https://zap-hosting.com/de/shop/donation/b46e5e7b07106dad59febaf3b66fd5e5/')
   .setAuthor('HahnrichJS', 'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/cb/cb9a41873f2065b8010afa7584803d283dd7e6ad_full.jpg', 'https://alleshusos.de')
-  .addField(`${client.mediaPlayer.now_playing !== '' ? client.mediaPlayer.now_playing : "not playing anything"}`, `${streamtimeformat}/${typeof client.mediaPlayer.currentLength !== "undefined" ? client.mediaPlayer.currentLength : "0:00"}`)
-  .setFooter(`Queue[${client.mediaPlayer.queue.length}]:\n${queue}`)
+  .addField(`${mediaPlayer.now_playing !== '' ? mediaPlayer.now_playing : "not playing anything"}`, `${streamtimeformat}/${typeof mediaPlayer.currentLength !== "undefined" ? mediaPlayer.currentLength : "0:00"}`)
+  .setFooter(`Queue[${mediaPlayer.queue.length}]:\n${queue}`)
   message.reply(embed)
-  //message.reply(client.mediaPlayer.now_playing + "\nQueue: \n" + client.mediaPlayer.queue.join('\n'))
+  //message.reply(mediaPlayer.now_playing + "\nQueue: \n" + mediaPlayer.queue.join('\n'))
 }

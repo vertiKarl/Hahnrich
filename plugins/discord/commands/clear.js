@@ -1,4 +1,5 @@
 module.exports = function(client, message, args) {
-  client.mediaPlayer.queue = []
-  client.mediaPlayer.next()
+  const mediaPlayer = client[message.guild.id]
+  mediaPlayer.queue = []
+  mediaPlayer.next()
 }

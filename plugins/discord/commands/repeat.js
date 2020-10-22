@@ -1,4 +1,5 @@
 module.exports = function(client, message, args) {
-    client.mediaPlayer.repeat = !client.mediaPlayer.repeat
-    message.reply("Repeating turned " + !client.mediaPlayer.repeat ? "off" : "on")
+    const mediaPlayer = client[message.guild.id]
+    mediaPlayer.repeat = !mediaPlayer.repeat
+    message.reply("Repeating turned " + !mediaPlayer.repeat ? "off" : "on")
 }

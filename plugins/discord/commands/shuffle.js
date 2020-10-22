@@ -1,3 +1,4 @@
 module.exports = function(client, message, args) {
-    client.mediaPlayer.shuffle()
+    const mediaPlayer = client[message.guild.id]
+    mediaPlayer.shuffle()
 }
