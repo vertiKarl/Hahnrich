@@ -1,6 +1,5 @@
 const F = require('fs')
 const ytdl = require('ytdl-core')
-const utf8 = require('utf8');
 const MAXLENGTH = 360;
 module.exports = function(client, message, args) {
   const mediaPlayer = client[message.guild.id]
