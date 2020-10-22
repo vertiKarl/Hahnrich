@@ -1,4 +1,5 @@
 const meta = require('music-metadata')
+const ytdl = require('ytdl-core')
 module.exports = class MediaPlayer {
   now_playing = ""
   queue = []
