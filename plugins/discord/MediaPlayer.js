@@ -18,7 +18,7 @@ module.exports = class MediaPlayer {
           if(typeof this.connection !== "undefined") {
             const dispatcher = this.connection.play(ytdl(this.now_playing))
             dispatcher.on('finish', () => {
-              client.mediaPlayer.next()
+              this.next()
             })
           }
         } else {
