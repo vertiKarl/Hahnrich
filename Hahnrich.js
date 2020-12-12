@@ -1,28 +1,28 @@
 const F = require('fs');
 const child = require('child_process');
 
+function toSeconds(ms) {
+  return ms / 1000 + "s";
+}
+
 module.exports = class Hahnrich {
   MAX_RECURSION = 5;
   plugins = new Map();
 
   constructor() {
-    console.time('total startup');
+    let startup = new Date().getTime();
 
-    console.time('init');
+    let init = new Date().getTime();
     this.init();
-    console.timeEnd('init');
+    console.log("Initialization: " + toSeconds(new Date().getTime() - init));
 
-    console.time('load-config');
-    this.loadConfig()
-    console.timeEnd('load-config')
-
-    console.time('load-plugins');
+    let plugins = new Date().getTime();
     this.loadPlugins();
-    console.timeEnd('load-plugins');
+    console.log("Loading plugins: " + toSeconds(new Date().getTime() - plugins));
 
     console.log("Plugins loaded:", Array.from(this.plugins.keys()))
 
-    console.timeEnd('total startup');
+    console.log("Startup: " + toSeconds(new Date().getTime() - startup));
     setInterval(() => {}, 90000000)
   }
 
@@ -73,6 +73,7 @@ module.exports = class Hahnrich {
       }
       cd.apply( console, debug)
     }
+    this.loadConfig()
   }
 
   loadConfig() {
