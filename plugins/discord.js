@@ -98,7 +98,16 @@ client.on('message', message => {
         commands.get(cmd)(client, message, args)
       } else if(cmd === "help") {
         let arr = Array.from(commands.keys())
-        message.reply(arr.join(', '))
+        let help = JSON.parse(F.readFileSync("./plugins/discord/commands.json"))
+        let embed = new discord.MessageEmbed()
+        .setColor('#d10202')
+        .setTitle('List of commands:')
+        .setURL('https://zap-hosting.com/de/shop/donation/b46e5e7b07106dad59febaf3b66fd5e5/')
+        .setAuthor('Hahnrich', 'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/cb/cb9a41873f2065b8010afa7584803d283dd7e6ad_full.jpg', 'https://alleshusos.de')
+        for(let c of Object.keys(help)) {
+          embed.addField(c, `${help[c]}`, true);
+        }
+        message.reply(embed)
       } else if(cmd === "reload") {
         commands = getCommands()
         message.reply("Commands reloaded!")

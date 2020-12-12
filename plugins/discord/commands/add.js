@@ -8,7 +8,6 @@ module.exports = function(client, message, args) {
     .then((info) => {
       if(info.videoDetails.lengthSeconds <= MAXLENGTH) {
         info.videoDetails.title = info.videoDetails.title.replace(/[^a-z0-9 ]/gi, "").replace(/[ ]/gi, "_") + ".mp3"
-        console.log(info)
         ytdl(args[0], {
           filter: "audioonly"
         })

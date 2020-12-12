@@ -4,7 +4,7 @@ module.exports = class MediaPlayer {
   now_playing = ""
   queue = []
   connection = undefined
-  currentLength = undefined
+  currentLength = 0
   leaveTimer = undefined
   next = function() {
     if(this.leaveTimer) {
