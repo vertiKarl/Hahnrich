@@ -106,6 +106,7 @@ module.exports = class Hahnrich {
     try {
       const name = file.replace('.js', '');
       const plugin = child.fork(`./plugins/${file}`, {silent: true})
+      plugin.runtime = new Date().getTime();
       this.plugins.set(name, plugin)
       plugin.on('message', (msg) => {
         let com = msg.split(' ')
@@ -128,6 +129,7 @@ module.exports = class Hahnrich {
       })
       plugin.on("close", (code) => {
         if(code === 'restart') recursion-1;
+        if(new Date().getTime() - plugin.aliveTimer > 30 * 1000) recursion-1;
         recursion < this.MAX_RECURSION ? this.startPlugin(file, recursion+1) : console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+"MAX RECURSION REACHED, EXITING"+"\u001b[0m")
       })
       console.log(`Successfully started ${name}`)

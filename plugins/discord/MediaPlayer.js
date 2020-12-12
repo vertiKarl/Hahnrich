@@ -23,27 +23,35 @@ module.exports = class MediaPlayer {
           }
         } else {
           this.now_playing = this.queue[0]
-          meta.parseFile(__dirname + "/songs/" + this.now_playing).then((data) => {
-            let length = {
-              total: parseInt(data.format.duration),
-              after: parseInt(data.format.duration),
-              minutes: 0,
-              seconds: 0
-            }
-            length.minutes = Math.floor(length.after / 60)
-            length.after = Math.floor(length.after - (length.minutes * 60) )
-            length.seconds = length.after
-            let lengthformat = ""
-            if(length.seconds > 10) {
-              lengthformat = `${length.minutes}:${length.seconds}`
-            } else {
-              lengthformat = `${length.minutes}:0${length.seconds}`
-            }
-            this.currentLength = lengthformat
-          })
+          if(this.now_playing.startsWith('https://youtube.com/watch')) {
+            this.currentLength = info.videoDetails.lengthSeconds;
+          } else {
+            meta.parseFile(__dirname + "/songs/" + this.now_playing).then((data) => {
+              let length = {
+                total: parseInt(data.format.duration),
+                after: parseInt(data.format.duration),
+                minutes: 0,
+                seconds: 0
+              }
+              length.minutes = Math.floor(length.after / 60)
+              length.after = Math.floor(length.after - (length.minutes * 60) )
+              length.seconds = length.after
+              let lengthformat = ""
+              if(length.seconds > 10) {
+                lengthformat = `${length.minutes}:${length.seconds}`
+              } else {
+                lengthformat = `${length.minutes}:0${length.seconds}`
+              }
+              this.currentLength = lengthformat
+            })
+          }
           this.queue.splice(0, 1)
           if(typeof this.connection !== "undefined") {
-            const dispatcher = this.connection.play(__dirname + "/songs/" + this.now_playing)
+            let n = __dirname + "/songs/" + this.now_playing;
+            if(this.now_playing.startsWith('https://youtube.com/watch')) {
+              n = this.now_playing;
+            }
+            const dispatcher = this.connection.play(n)
             dispatcher.on('finish', () => {
               this.next()
             })
@@ -64,7 +72,11 @@ module.exports = class MediaPlayer {
     } else {
       // play again
       if(typeof this.connection !== "undefined") {
-        const dispatcher = this.connection.play(__dirname + "/songs/" + this.now_playing)
+        let n = __dirname + "/songs/" + this.now_playing;
+        if(this.now_playing.startsWith('https://youtube.com/watch')) {
+          n = this.now_playing;
+        }
+        const dispatcher = this.connection.play(n)
         dispatcher.on('finish', () => {
           this.next()
         })

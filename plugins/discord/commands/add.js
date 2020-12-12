@@ -7,14 +7,12 @@ module.exports = function(client, message, args) {
     ytdl.getInfo(args[0])
     .then((info) => {
       if(info.videoDetails.lengthSeconds <= MAXLENGTH) {
-        info = info.videoDetails.title + ".mp3"
-        console.log(info)
+        info.videoDetails.title = info.videoDetails.title.replace(/[^a-z0-9 ]/gi, "").replace(/[ ]/gi, "_") + ".mp3"
         ytdl(args[0], {
           filter: "audioonly"
         })
         .pipe(F.createWriteStream(__dirname + `/../songs/${info}`))
         .on("finish", () => {
-          console.log('done downloading song')
           mediaPlayer.queue.push(info);
           // connect to channel if not done yet
           if(!mediaPlayer.connection) {
