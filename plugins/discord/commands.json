@@ -1,0 +1,13 @@
+{
+    "add": "Downloads a youtube video up to 6 mins long and adds it to the queue",
+    "clear": "Clears queue",
+    "join": "Joins voicechannel",
+    "leave": "Leave voicechannel",
+    "np": "Shows current queue",
+    "play": "Adds a valid youtube link to the queue",
+    "random": "adds a given amount of random songs from storage to the queue",
+    "repeat": "toggles repeat on/off",
+    "restart": "restarts the bot",
+    "shuffle": "shuffles the queue",
+    "skip": "skips current song"
+}
