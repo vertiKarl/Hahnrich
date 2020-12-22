@@ -69,15 +69,16 @@ client.on('message', message => {
           })
           .pipe(F.createWriteStream(__dirname + "/discord/songs/" + file.name))
             .on('finish', () => {
-              client.mediaPlayer.queue.push(file.name)
-              if(client.mediaPlayer.connection) {
-                if(!client.mediaPlayer.now_playing || client.mediaPlayer.now_playing === '') {
-                  client.mediaPlayer.next()
+              client[message.guild.id].queue.push(file.name)
+              if(client[message.guild.id].connection) {
+                if(!client[message.guild.id].now_playing || client[message.guild.id].now_playing === '') {
+                  client[message.guild.id].next()
                 }
               } else {
                 require('./discord/commands/join.js')(client, message, [])
                 .then((con) => {
-                  client.mediaPlayer.connection = con
+                  client[message.guild.id].connection = con
+                  client[message.guild.id].next()
                 })
                 .catch((err) => {
                   message.reply(err)
