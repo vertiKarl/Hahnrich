@@ -146,6 +146,91 @@ app.post('/streams/:id', (req, res) => {
     res.send({"error": 'invalid request'})
   }
 })
+app.post('/user/:name', (req, res) => {
+  console.log(req.params)
+  const name = req.params.name
+  if(req.body.key === config.key) {
+    twitch.helix.users.getUserByName(name)
+    .then((result) => {
+      console.log('sending result')
+      res.json(result)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
+app.post('/channel/:name', (req, res) => {
+  console.log(req.params)
+  const name = req.params.name
+  if(req.body.key === config.key) {
+    twitch.helix.users.getUserByName(name)
+    .then(async (result) => {
+      result = await twitch.helix.channels.getChannelInfo(result)
+      console.log(result)
+      console.log('sending result')
+      res.json(result)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
+app.post('/followers/:name', (req, res) => {
+  console.log(req.params)
+  const name = req.params.name
+  if(req.body.key === config.key) {
+    twitch.helix.users.getUserByName(name)
+    .then(async (result) => {
+      let follows = await twitch.kraken.channels.getChannelFollowers(result.id)
+      let response = {
+        _data: []
+      }
+      for(let follow of follows) {
+        response._data.push(follow)
+      }
+      console.log(response._data)
+      console.log('sending result')
+      res.json(response)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
+app.post('/followsto/:name', (req, res) => {
+  console.log(req.params)
+  const name = req.params.name
+  if(req.body.key === config.key) {
+    twitch.helix.users.getUserByName(name)
+    .then(async (result) => {
+      result = await result.getFollows()
+      let data = result.data
+      console.log(result)
+      let response = {
+        _data: []
+      }
+      for(let user in data) {
+        response._data.push(data[user]);
+      }
+      console.log("RESPONSE")
+      console.log(response._data)
+      console.log('sending result')
+      res.json(response)
+    }).catch((e) => {
+      console.log(e)
+      res.send(e)
+    })
+  } else {
+    res.send({"error": 'invalid request'})
+  }
+})
 http.createServer(app).listen(8080)
 
 // start chat client
