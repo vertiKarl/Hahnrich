@@ -19,7 +19,6 @@
     "twitch": "^4.2.6",
     "twitch-chat-client": "^4.2.6",
     "twitch-pubsub-client": "^4.2.6",
-    "ytdl-core": "^4.1.4"
+    "ytdl-core": "^4.2.1"
   }
 }
-
