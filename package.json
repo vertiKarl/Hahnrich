@@ -1,6 +1,6 @@
 {
   "name": "hahnrich",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "the latest rework of my hahnrich bot",
   "main": "index.js",
   "scripts": {
