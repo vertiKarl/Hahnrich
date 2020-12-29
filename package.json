@@ -14,11 +14,11 @@
     "cors": "^2.8.5",
     "discord.js": "^12.5.1",
     "express": "^4.17.1",
-    "music-metadata": "^7.4.0",
-    "postman-request": "^2.88.1-postman.26",
-    "twitch": "^4.3.6",
-    "twitch-chat-client": "^4.2.6",
-    "twitch-pubsub-client": "^4.2.6",
+    "music-metadata": "^7.5.2",
+    "postman-request": "^2.88.1-postman.27",
+    "twitch": "^4.3.8",
+    "twitch-chat-client": "^4.3.8",
+    "twitch-pubsub-client": "^4.3.8",
     "ytdl-core": "^4.2.1"
   }
 }
