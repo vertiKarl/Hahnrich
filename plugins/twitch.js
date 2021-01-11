@@ -28,7 +28,7 @@ process.on('message', (msg) => {
         let link = clip.thumbnailUrl.split('-preview')[0]+'.mp4'
         dhl.get(link).pipe(F.createWriteStream(`./plugins/discord/clips/${clip.id}.mp4`)).on('finish', () => {
                   F.writeFileSync(`./plugins/discord/clips/${clip.id}.json`, JSON.stringify(clip, null, 4))
-                  console.log("discordDL", `Successfully downloaded clip "${clip.title}" from channel ${clip.broadcasterDisplayName}.\nYou can find it here: https://alleshusos.de/clips/${clip.id}.mp4`)
+                  console.log("discordDL", `Successfully downloaded clip "${clip.title}" from channel ${clip.broadcasterDisplayName}.\nYou can find it here: https://alleshusos.de/clips/${clip.id}`)
                 })
       })
       .catch((err) => {
