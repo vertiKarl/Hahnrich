@@ -1,6 +1,6 @@
 {
   "name": "hahnrich",
-  "version": "4.3.5",
+  "version": "4.3.6",
   "description": "the latest rework of my hahnrich bot",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "music-metadata": "^7.11.3",
     "node": "^14.17.4",
     "npm": "^7.21.1",
+    "os-utils": "0.0.14",
     "postman-request": "^2.88.1-postman.28",
     "twitch": "^4.6.6",
     "twitch-auth": "^4.6.6",
