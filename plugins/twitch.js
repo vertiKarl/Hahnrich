@@ -13,7 +13,7 @@ const cors = require('cors');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: "https://karlology.de",
+  origin: "https://karlology.eu",
   optionsSuccessStatus: 200,
   credentials: true
 }))
@@ -30,7 +30,7 @@ process.on('message', (msg) => {
         let link = clip.thumbnailUrl.split('-preview')[0]+'.mp4'
         dhl.get(link).pipe(F.createWriteStream(`./plugins/discord/clips/${clip.id}.mp4`)).on('finish', () => {
                   F.writeFileSync(`./plugins/discord/clips/${clip.id}.json`, JSON.stringify(clip, null, 4))
-                  console.log("discordDL", `Successfully downloaded clip "${clip.title}" from channel ${clip.broadcasterDisplayName}.\nYou can find it here: https://karlology.de/clips/${clip.id}`)
+                  console.log("discordDL", `Successfully downloaded clip "${clip.title}" from channel ${clip.broadcasterDisplayName}.\nYou can find it here: https://karlology.eu/clips/${clip.id}`)
                 })
       })
       .catch((err) => {
@@ -328,8 +328,8 @@ const credentials = {
   cert: certificate,
   ca: ca
 }
-https.createServer(credentials, app).listen(8080, () => {
-  console.log("Server running on https://localhost:8080");
+https.createServer(credentials, app).listen(8443, () => {
+  console.log("Server running on https://localhost:8443");
 });
 
 // start chat client

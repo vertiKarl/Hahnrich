@@ -8,3 +8,6 @@ plugins/discord/trends.json
 latest.log
 license
 steal.js
+*.bak
+*.zip
+*.swp

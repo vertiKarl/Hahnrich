@@ -9,20 +9,20 @@
   "author": "vertikarl",
   "license": "GPL-3.0",
   "dependencies": {
-    "@discordjs/opus": "^0.5.0",
+    "@discordjs/opus": "^0.5.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "discord.js": "^12.5.1",
     "express": "^4.17.1",
-    "music-metadata": "^7.8.1",
-    "node": "^14.16.0",
-    "npm": "^7.6.3",
+    "music-metadata": "^7.11.3",
+    "node": "^14.17.4",
+    "npm": "^7.21.1",
     "postman-request": "^2.88.1-postman.28",
-    "twitch": "^4.5.5",
-    "twitch-auth": "^4.5.1",
-    "twitch-chat-client": "^4.5.1",
-    "twitch-pubsub-client": "^4.5.1",
+    "twitch": "^4.6.6",
+    "twitch-auth": "^4.6.6",
+    "twitch-chat-client": "^4.6.6",
+    "twitch-pubsub-client": "^4.6.6",
     "youtube-search": "^1.1.6",
-    "ytdl-core": "^4.5.0"
+    "ytdl-core": "^4.9.1"
   }
 }
