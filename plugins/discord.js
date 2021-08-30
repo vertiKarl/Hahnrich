@@ -9,7 +9,18 @@ const ytdl = require("ytdl-core");
 const MediaPlayer = require("./discord/MediaPlayer.js");
 
 process.on("message", (msg) => {
-	lastDL.reply(msg.join(" "));
+	console.log(msg)
+	if(msg[0].includes("clip")) {
+		lastDL.reply(msg.join(" "));
+	} else if(msg[0].startsWith("send")) {
+		if(client.channels.cache.get(msg[1])) {
+			client.channels.cache.get(msg[1]).send(msg.slice(2).join(" "))
+		} else if(client.users.cache.get(msg[1])) {
+			client.users.cache.get(msg[1]).send(msg.slice(2).join(" "))
+		} else {
+			console.log("Channel or User not found.")
+		}
+	}
 });
 
 // load config

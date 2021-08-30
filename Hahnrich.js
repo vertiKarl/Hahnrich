@@ -8,6 +8,7 @@ function toSeconds(ms) {
 module.exports = class Hahnrich {
   MAX_RECURSION = 5;
   plugins = new Map();
+  modules = new Map();
 
   constructor() {
     let startup = new Date().getTime();
@@ -21,6 +22,12 @@ module.exports = class Hahnrich {
     console.log("Loading plugins: " + toSeconds(new Date().getTime() - plugins));
 
     console.log("Plugins loaded:", Array.from(this.plugins.keys()))
+
+    let modules = new Date().getTime();
+    this.loadModules();
+    console.log("Loading modules: " + toSeconds(new Date().getTime() - modules));
+
+    console.log("Modules loaded:", Array.from(this.modules.keys()))
 
     console.log("Startup: " + toSeconds(new Date().getTime() - startup));
     setInterval(() => {}, 90000000)
@@ -84,6 +91,7 @@ module.exports = class Hahnrich {
         console.log('creating config file')
         const configTemplate = {
           "ignorePlugins": ["test.js"],
+          "ignoreModules": ["test.js"],
           "pluginSettings": {}
         }
         F.writeFileSync('./config.json', JSON.stringify(configTemplate, null, 4))
@@ -101,6 +109,21 @@ module.exports = class Hahnrich {
         this.startPlugin(file)
       }
     }
+  }
+
+  loadModules() {
+    const Files = F.readdirSync('./modules').filter(file => file.endsWith('.js'))
+    for(const file of Files) {
+      if(!this.config.ignoreModules.includes(file)) {
+        this.startModule(file)
+      }
+    } 
+  }
+
+  startModule(file) {
+    const name = file.replace(".js", "");
+    const module = (require(`./modules/${file}`))(this);
+    this.modules.set(name, module);
   }
 
   startPlugin(file, recursion=0) {
@@ -129,9 +152,12 @@ module.exports = class Hahnrich {
         if(err.includes("restart")) recursion = 0;
         // plugin.kill() not needed for now
       })
-      plugin.on("close", (code) => {
+      plugin.on("close", (code, signal) => {
         if(new Date().getTime() - plugin.aliveTimer > 30 * 1000) recursion-=1;
-        recursion < this.MAX_RECURSION ? this.startPlugin(file, recursion+1) : console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+"MAX RECURSION REACHED, EXITING"+"\u001b[0m")
+        console.log(signal)
+        if(signal != "SIGKILL") {
+          recursion < this.MAX_RECURSION ? this.startPlugin(file, recursion+1) : console.error(`ERROR IN PLUGIN ${name}\n\u001b[48;5;88m\u001b[38;5;231m`+"MAX RECURSION REACHED, EXITING"+"\u001b[0m")
+        }
       })
       console.log(`Successfully started ${name}`)
     } catch(e) {

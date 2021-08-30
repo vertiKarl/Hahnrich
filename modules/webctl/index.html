@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<head>
+    <title>Hahnrich Control Panel</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.png">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+
+        * {
+            transition: all 0.3s;
+        }
+
+        .title h1{
+            background-color:rgb(60, 31, 31);
+            padding: 10px 30px;
+            border-radius: 1rem;
+            filter: drop-shadow(10px 10px 4px black);
+        }
+
+        html {
+            background: rgb(119,88,120);
+            background: linear-gradient(165deg, rgba(119,88,120,1) 0%, rgba(56,80,83,1) 100%); 
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            width: 100%;
+            height: 100%;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .item {
+            padding: 10px;
+            /* background: rgba(255, 255, 255, 0.1); */
+            background: rgb(60, 31, 31);
+            border-radius: 1rem;
+            min-width: 5vw;
+            min-height: 25vh;
+            margin: 10px;
+            box-shadow: black;
+            filter: drop-shadow(10px 10px 4px black);
+        }
+
+        .item h1 {
+            text-align: center;
+            margin: 0;
+        }
+
+        .item ol {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+
+        }
+
+        .collapsible {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            width: 100%;
+            border: none;
+            text-align: center;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #ccc;
+        }
+
+        .content {
+            padding: 0 18px;
+            overflow: hidden;
+            max-height: 0;
+            background-color: #f1f1f1;
+            color: black;
+            margin: 0;
+        }
+
+        .bottom-popout {
+            margin: 0;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            min-height: 15vh;
+            height: 15vh;
+            /* background-color: rgba(0, 0, 0, 0.7); */
+            transition: all 0.3s;
+        }
+
+        .bottom-popout input {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 16px;
+            width: 100vw;
+            padding: 10px 0;
+            bottom: 0;
+            border: 0;
+        }
+
+        .bottom-popout h1 {
+            z-index: 99;
+            filter: none;
+        }
+
+        .bottom-popout #log {
+            overflow: hidden;
+        }
+
+        #resizer {
+            width: 100%;
+            position: absolute;
+            top: 35px;
+            height: 5px;
+            background-color: black;
+            resize: vertical;
+            cursor: row-resize;
+        }
+
+        #collapser {
+            position: relative;
+            height: 25px;
+            top: 0;
+            left: 50%;
+            background: orange;
+            border: 5px solid black;
+            border-radius: 2rem 2rem 0 0;
+            width: 80px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        #collapser svg {
+            position: absolute;
+            left: 38%;
+            top: 25%;
+            transform-origin: 0 7px;
+            width: 16px;
+            height: 16px;
+        }
+
+        .hide {
+            line-height: 0 !important;
+            padding: 0 !important;
+            max-height: 0 !important;
+            visibility: hidden !important;
+
+        }
+
+        .disabled {
+            filter: grayscale(100%);
+            filter: blur(2px);
+        }
+
+        #log {
+            margin: 0;
+            padding: 0 10px;
+            overflow: scroll;
+            min-height: calc(100% - 16px - 40px);
+            transition: all 0.3s;
+            position: absolute;
+            top: 40px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: rgba(0, 0, 0, 0.7);
+            height: calc(100% - 16px - 40px);
+        }
+
+        #CPU canvas {
+            width: 100%;
+            height: 125px;
+        }
+    </style>
+
+    <script>
+
+        const checks = {
+            CPU: false,
+            RAM: false,
+            PC: false
+        }
+
+        const options = {
+            CPU: true,
+            RAM: true,
+            PC: true
+        }
+
+        const helpInfo = {
+            "core": {
+                "start": {
+                    "[plugin]": "starts selected plugin"
+                },
+                "restart": {
+                    "[ \"\" | self]": "restarts master and plugins",
+                    "[plugin": "restarts selected plugin"
+                },
+                "stop": {
+                    "[ \"\" | self]": "stops master and plugins",
+                    "[plugin]": "stop selected plugin"
+                },
+                "plugins": "lists currently active plugins"
+            },
+            "[plugin]": "[command, ...args] runs command with args in plugin"
+        }
+
+        window.onload = () => {
+
+            // https://stackoverflow.com/a/34487057
+
+            $("#resizer")[0].addEventListener('mousedown',initResize, false);
+
+            //Window funtion mousemove & mouseup
+            function initResize(e) {
+                $("#Terminal")[0].style.transition = "none";
+                window.addEventListener('mousemove', Resize, false);
+                window.addEventListener('mouseup', stopResize, false);
+            }
+            //resize the element
+            function Resize(e) {
+                $("#Terminal")[0].style.height = ( window.innerHeight - e.clientY) + 'px';
+            }
+            //on mouseup remove windows functions mousemove & mouseup
+            function stopResize(e) {
+                $("#Terminal")[0].style.transition = "all 0.3s";
+                window.removeEventListener('mousemove', Resize, false);
+                window.removeEventListener('mouseup', stopResize, false);
+            }
+
+            function connect() {
+                console.log("Trying to connect")
+                window.socket = new WebSocket("wss://local.karlology.eu:9000");
+
+                socket.onopen = function(e) {
+
+                    for(const [key, value] of Object.entries(options)) {
+                        checks[key] = value;
+                    }
+
+                    clearInterval(window.retry)
+                    console.log("Connected")
+                    log("Connected")
+                    window.UNITS = $(".disabled");
+                    for(const a of window.UNITS) {
+                        a.classList.toggle("disabled")
+                    }
+
+                    document.getElementById("term").disabled = false;
+
+                    document.getElementById("notConnected").style.display = "none";
+                }
+
+                socket.onmessage = function(event){
+                    console.log(event.data);
+                    log(event.data)
+                }
+
+                socket.onclose = function(event) {
+                    for(const a of window.UNITS) {
+                        a.classList.toggle("disabled")
+                    }
+
+                    for(let [key, value] of Object.entries(checks)) {
+                        checks[key] = false;
+                    }
+                    
+
+                    document.getElementById("term").disabled = true;
+
+                    document.getElementById("notConnected").style.display = "";
+
+                    if(event.wasClean) {
+                        console.log("Successfully disconnected.")
+                        log("Successfully disconnected.")
+                    } else {
+                        console.log("Lost connection.")
+                        log("Lost connection.")
+                        window.socket = undefined;
+                        window.retry = setTimeout(connect, 1000)
+                    }
+                   
+                }
+
+                socket.onerror = function(error){
+                    console.log("Error: " + error.message)
+                    log("Error: " + error.message)
+                    window.socket.close();
+                }
+            }
+
+            connect()
+            
+
+            document.getElementById("term").addEventListener("keyup", function(event) {
+                if (event.keyCode === 13) {
+                    console.log("adad")
+                    sendCommand()
+                }
+            })
+            tick()
+            setInterval(tick, 1000)
+        }
+
+        function usage(cpu) {
+            console.log(cpu)
+            let totalUsage = 0;
+            for(let detail in cpu) {
+                if(detail != "idle") {
+                    totalUsage += cpu[detail];
+                }
+            }
+            let totalCycles = totalUsage + cpu.idle;
+            return 100 * (totalUsage / totalCycles);
+        }
+
+        window.graph;
+
+        function tick() {
+
+            // CPU
+            if(checks.CPU) {
+                fetch("/CPU")
+                .then(async (res) => {
+                    res = await res.json();
+                    let div;
+                    const CPU = document.getElementById("CPU")
+
+                    if(!window.graph) {
+                        window.graph = new Chart(
+                            document.getElementById('cpuUsage'),
+                            {
+                                type: 'line',
+                                data: {
+                                datasets: [{
+                                    label: 'Usage',
+                                    backgroundColor: 'rgb(255, 99, 132)',
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    data: [res.usage],
+                                }]
+                                },
+                                options: {}
+                            }
+                        );
+
+                    } else {
+                        console.log(res.usage.toFixed(2))
+                        const dataPoints = window.graph.data.datasets[0].data;
+                        if(dataPoints.length > 100 ) {
+                            dataPoints.shift(res.usage)
+                        } else {
+                            dataPoints.push(res.usage);
+                        }
+                        window.graph.update()
+                    }
+
+                    // function addData(chart, label, data) {
+                    //     chart.data.labels.push(label);
+                    //     chart.data.datasets.forEach((dataset) => {
+                    //         dataset.data.push(data);
+                    //     });
+                    //     chart.update();
+                    // }
+
+                    // function removeData(chart) {
+                    //     chart.data.labels.pop();
+                    //     chart.data.datasets.forEach((dataset) => {
+                    //         dataset.data.pop();
+                    //     });
+                    //     chart.update();
+                    // }
+
+                    if(!document.getElementById("cores")) {
+                        div = document.createElement("div")
+                        div.id = "cores";
+                        const usage = document.createElement("p");
+                        usage.innerHTML = "Usage: " + res.usage.toFixed(2) + "%";
+                        CPU.append(usage);
+                        CPU.append(div)
+                    } else {
+                        div = document.getElementById("cores")
+                    }
+                    
+                    if(div.children.length != res.cores.length * 2) {
+                        console.log("PAIN")
+                        div.innerHTML = "";
+                        let i = 0;
+                        for(const core of res.cores) {
+                            const button = document.createElement("button");
+                            button.className = "collapsible";
+                            button.addEventListener("click", function() {
+                                this.classList.toggle("active");
+                                const content = this.nextElementSibling;
+                                if(content.style.maxHeight) {
+                                    content.style.maxHeight = null;
+                                } else {
+                                    content.style.maxHeight = content.scrollHeight + "px";
+                                }
+                            })
+                            const stats = document.createElement("div");
+                            stats.className = "content"
+                            const name = document.createElement("p");
+                            const speed = document.createElement("p");
+                            const usage = document.createElement("p");
+
+                            button.innerHTML = "Core "+i++;
+
+                            name.innerHTML = "Model: " + core.model;
+                            speed.innerHTML = "Speed: " + core.speed + " MHz";
+
+                            div.append(button)
+                            stats.append(name);
+                            stats.append(speed);
+                            div.append(stats)
+                        }
+                    } else {
+                        CPU.children[2].innerHTML = "Usage: " + res.usage.toFixed(2) + "%";
+                        let i = 0;
+                        for(const child in div.children) {
+                            if(div.children[child].nodeName == "DIV") {
+                                div.children[child].children[0].innerHTML = "Model: " + res.cores[i].model;
+                                div.children[child].children[1].innerHTML = "Speed: " + res.cores[i].speed + " MHz";
+                                i++
+                            }
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error(err)
+                })
+            }
+
+            // RAM
+            if(checks.RAM) {
+                fetch("/RAM")
+                .then(async (res) => {
+                    res = await res.json();
+                    const div = document.getElementById("ramInfo");
+                    if(div.children.length == 0) {
+                        const total = document.createElement("p");
+                        const free = document.createElement("p");
+                        const used = document.createElement("p");
+
+                        total.innerHTML = "Total: " + (res.total / 1024 / 1024) + " MB";
+                        free.innerHTML = "Free: " + Math.round(res.free / 1024 / 1024) + " MB";
+                        used.innerHTML = "Used: " + Math.round((res.total -  res.free) / 1024 / 1024) + " MB";
+
+                        div.append(total);
+                        div.append(free);
+                        div.append(used);
+                    } else {
+                        div.children[0].innerHTML = "Total: " + (res.total / 1024 / 1024) + " MB";
+                        div.children[1].innerHTML = "Free: " + Math.round(res.free / 1024 / 1024) + " MB";
+                        div.children[2].innerHTML = "Used: " + Math.round((res.total -  res.free) / 1024 / 1024) + " MB";
+                    }
+                })
+            }
+
+            // Rig
+            if(checks.PC) {
+                fetch("/PC")
+                .then(async (res) => {
+                    res = await res.json();
+                    const div = document.getElementById("pcInfo");
+                    if(div.children.length == 0) {
+                        const hostname = document.createElement("p");
+                        const networkifs = document.createElement("ol");
+                        const platform = document.createElement("p");
+                        const uptime = document.createElement("p");
+                        const version = document.createElement("p");
+
+                        hostname.innerHTML = "Hostname: " + res.hostname
+                        platform.innerHTML = "Platform: " + res.platform + " " + res.arch + " (" + res.type + ")"
+                        version.innerHTML = "Version: " + res.version
+                        uptime.innerHTML = "Uptime: " + Math.floor(res.uptime / 60 / 60 / 24) + " Days " + Math.floor(res.uptime / 60 / 60 % 24) + " Hours"
+                        for(const interface in res.networkifs) {
+                            const intf = document.createElement("p");
+                            intf.className = "content"
+
+                            // IPv4
+                            const button = document.createElement("button");
+                            button.className = "collapsible"
+                            button.innerHTML = interface
+                            button.addEventListener("click", function() {
+                                this.classList.toggle("active");
+                                if(intf.style.maxHeight) {
+                                    intf.style.maxHeight = null;
+                                } else {
+                                    intf.style.maxHeight = intf.scrollHeight + "px";
+                                }
+                            })
+
+                            const details4 = res.networkifs[interface][0];
+                            const details6 = res.networkifs[interface][1];
+                            
+                            intf.innerHTML = "IPv4<br>" + 
+                            " CIDR: " + details4.cidr + "<br>" +
+                            " MAC: " + details4.mac + "<br>IPv6<br>" +
+                            " CIDR: " + details6.cidr + "<br>" +
+                            " MAC: " + details6.mac;
+
+                            networkifs.append(button)
+                            networkifs.append(intf)
+                        }
+
+                        div.append(hostname)
+                        div.append(networkifs)
+                        div.append(platform)
+                        div.append(uptime)
+                        div.append(version)
+
+                    }
+                })
+            }
+
+
+
+            
+        }
+
+        function log(string) {
+            console.log(string)
+            const p = document.createElement("p");
+            p.innerHTML = "[" + new Date().toLocaleTimeString() + "] " + string;
+            document.getElementById("log").append(p)
+            p.scrollIntoView({ block: "end", behavior: "smooth"});
+        }
+
+        function collapseTerminal() {
+
+            const terminal = $("#Terminal")[0];
+
+            const objectsToHide = Array.from(terminal.children).slice(1);
+
+            if(terminal.style.height === "40px") {
+                terminal.style.minHeight = "15vh";
+                terminal.style.height = "15vh";
+
+                for(object of objectsToHide) {
+                    object.classList.toggle("hide");
+                }
+                $("#collapser")[0].children[0].style.transform = "";
+            } else {
+                terminal.style.minHeight = "40px";
+                terminal.style.height = "40px";
+
+
+                for(object of objectsToHide) {
+                    object.classList.toggle("hide");
+                }
+
+                $("#collapser")[0].children[0].style.transform = "rotateX(180deg)";
+            }
+
+            
+        }
+
+        function sendCommand() {
+            // Syntax
+            // [plugin] [command] [args]
+            // core restart/start/stop [plugin]
+            // probe pid
+
+            const term = document.getElementById("term");
+            const command = term.value;
+            term.value = ""
+
+            log(command)
+
+            if(command.split(" ")[0] === "help") {
+                for(const [k, v] of Object.entries(helpInfo)) {
+                    if(typeof v === "object") {
+                        for(const [k1, v1] of Object.entries(v)) {
+                            if(typeof v1 === "object") {
+                                for(const [k2, v2] of Object.entries(v1)) {
+                                    log(`${k}: ${k1} ${k2} ${v2}`)
+                                }
+                            } else {
+                                    log(`${k}: ${k1} ${v1}`)
+                            }
+                        }
+                    } else {
+                        log(`${k}: ${v}`)
+                    }
+                }
+            } else {
+                window.socket.send(command)
+            }
+        }
+        
+    </script>
+</head>
+
+<body>
+    <div class="title" style="display:flex;justify-content:center;">
+        <h1>Hahnrich Control Panel</h1>
+    </div>
+    <div class="container">
+        <div id="PC" class="item">
+            <h1>PC</h1>
+            <div id="pcInfo">
+            </div>
+        </div>
+        <div id="CPU" class="item">
+            <h1>CPU</h1>
+            <canvas id="cpuUsage" width="100" height="100"></canvas>
+        </div>
+        <div id="RAM" class="item">
+            <h1>RAM</h1>
+            <div id="ramInfo">
+            </div>
+        </div>
+        <div id="Terminal" class="bottom-popout">
+            <button id="collapser" onclick="collapseTerminal()">
+                <svg>
+                    <g id="layer1" inkscape:label="Layer 1" inkscape:groupmode="layer" transform="translate(-35.399 -598.91)">
+                        <path id="rect2985" style="fill:#000000" d="m40.836 598.91v6.75h-5.4375l4 4.625 4 4.625 4-4.625 4-4.625h-5.0938v-6.75h-5.4688z" inkscape:export-ydpi="90" inkscape:connector-curvature="0" inkscape:export-xdpi="90"/>
+                    </g>
+                </svg>
+            </button>
+            <div id="resizer"></div>
+            <h1 id="notConnected">NOT CONNECTED</h1>
+            <div id="log" class="disabled">
+            </div>
+            <input class="disabled" disabled id="term" type="text" placeholder="Enter a command"></input>
+        </div>
+    </div>
+    <div id="test"></div>
+</body>
