@@ -10,7 +10,7 @@ const MediaPlayer = require("./discord/MediaPlayer.js");
 
 process.on("message", (msg) => {
 	console.log(msg)
-	if(msg[0].includes("clip")) {
+	if(msg.includes("clip")) {
 		lastDL.reply(msg.join(" "));
 	} else if(msg[0].startsWith("send")) {
 		if(client.channels.cache.get(msg[1])) {
