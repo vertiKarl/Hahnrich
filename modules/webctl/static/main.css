@@ -1,0 +1,280 @@
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@700&family=Lobster&display=swap');
+
+:root {
+    --bg: #262626;
+    --bg-alt: #715B5B;
+    --bg-alt2: #8b7474;
+    --title: #F0F3BD;
+    --text: #F8FFE5;
+    --text-alt: #f1ffcc;
+    font-family: 'Cabin', sans-serif;
+}
+
+* {
+    transition: all 0.3s;
+    padding: 0;
+    margin: 0;
+}
+
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+}
+
+#title {
+    margin: auto;
+}
+
+.divider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    filter: invert(37%) sepia(8%) saturate(943%) hue-rotate(314deg) brightness(95%) contrast(85%) drop-shadow(2px 0px 1rem black);
+    line-height: 0;
+    pointer-events: none;
+}
+
+.navigator {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 112px;
+    background-color: var(--bg-alt);
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    z-index: 1;
+}
+
+.navigator a {
+    color: var(--title);
+    font-family: 'Lobster', cursive;
+    font-size: 64px;
+    text-decoration: none;
+    text-shadow: 2px 2px 1rem black;
+}
+
+.navigator button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 112px;
+    height: 112px;
+    font-size: 112px;
+    color: var(--text)
+}
+
+.navigator img {
+    width: 112px;
+    height: 112px;
+    border-radius: 2rem;
+}
+
+#navbar {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    height: calc(100vh - 112px);
+    width: 224px;
+    margin-left: -250px;
+    background: var(--bg-alt2);
+    text-align: left;
+    transition: all 0.3s;
+    filter: drop-shadow(12px 10px 10px black);
+}
+
+#navbar.enabled {
+    margin: 0;
+}
+
+#navbar ul {
+    display: flex;
+    padding: 15px;
+    margin: 0;
+    margin-top: 55px;
+    flex-direction: column;
+}
+
+#navbar ul a {
+    margin-top: 15px;
+    font-size: 32px;
+    text-decoration: none;
+    color: var(--text-alt)
+}
+
+.content {
+    width: 100%;
+    margin: 64px;
+    margin-top: 170.8px;
+    display: flex;
+}
+
+.item {
+    width: 32%;
+    height: 250px;
+    background-color: var(--bg-alt);
+    color: var(--text);
+    border-radius: 2rem;
+    padding: 5px;
+    filter: drop-shadow(15px 15px 5px black);
+    text-align: center;
+}
+
+.item a {
+    text-decoration: none;
+    color: var(--text);
+}
+
+footer {
+    width: 100%;
+    height: 112px;
+    background: var(--bg-alt);
+    color: var(--text-alt);
+    z-index: 1;
+    position: relative;
+    filter: drop-shadow(2px 2px 1rem black);
+}
+
+footer p {
+    padding: 20px;
+}
+
+/* Hahnrich specific */
+.collapsible {
+    /*  background-color: #eee;
+     color: #444; */
+     background-color: var(--bg-alt2);
+     color: var(--text);
+     cursor: pointer;
+     width: 100%;
+     border: none;
+     text-align: center;
+     outline: none;
+     font-size: 15px;
+ }
+
+ .active, .collapsible:hover {
+     /* background-color: #ccc; */
+     filter: brightness(85%);
+ }
+
+ .contentCol {
+     padding: 0 18px;
+     overflow: hidden;
+     max-height: 0;
+     /* background-color: #f1f1f1;
+     color: black; */
+     background-color: var(--bg-alt2);
+     filter: brightness(90%);
+     color: var(--text);
+     margin: 0;
+ }
+
+ .bottom-popout {
+     margin: 0;
+     position: fixed;
+     bottom: 0;
+     right: 0;
+     width: 100%;
+     min-height: 15vh;
+     height: 15vh;
+     /* background-color: rgba(0, 0, 0, 0.7); */
+     transition: all 0.3s;
+ }
+
+ .bottom-popout input {
+     position: absolute;
+     background-color: var(--bg-alt2);
+     color: var(--text);
+     left: 0;
+     right: 0;
+     height: 16px;
+     width: 100%;
+     padding: 10px 0;
+     bottom: 0;
+     border: 0;
+ }
+
+ .bottom-popout h1 {
+     z-index: 99;
+     filter: none;
+ }
+
+ .bottom-popout #log {
+     overflow: hidden;
+ }
+
+ #resizer {
+     width: 100%;
+     position: absolute;
+     top: 35px;
+     height: 5px;
+     background-color: black;
+     resize: vertical;
+     cursor: row-resize;
+ }
+
+ #collapser {
+     position: relative;
+     height: 25px;
+     top: 0;
+     left: 50%;
+     /* background: orange; */
+     background: var(--title);
+     border: 5px solid black;
+     border-radius: 2rem 2rem 0 0;
+     width: 80px;
+     height: 40px;
+     cursor: pointer;
+ }
+
+ #collapser svg {
+     position: absolute;
+     left: 38%;
+     top: 25%;
+     transform-origin: 0 7px;
+     width: 16px;
+     height: 16px;
+ }
+
+ .hide {
+     line-height: 0 !important;
+     padding: 0 !important;
+     max-height: 0 !important;
+     visibility: hidden !important;
+
+ }
+
+ .disabled {
+     filter: grayscale(100%);
+     filter: blur(2px);
+ }
+
+ #log {
+     margin: 0;
+     padding: 0 10px;
+     overflow: scroll;
+     min-height: calc(100% - 16px - 40px);
+     transition: all 0.3s;
+     position: absolute;
+     top: 40px;
+     width: 100%;
+     box-sizing: border-box;
+     /* background-color: rgba(0, 0, 0, 0.7); */
+     background-color: var(--bg-alt);
+     opacity: 80%;
+     height: calc(100% - 16px - 40px);
+ }
+
+ #CPU canvas {
+     width: 100%;
+     height: 125px;
+     max-height: 125px;
+ }

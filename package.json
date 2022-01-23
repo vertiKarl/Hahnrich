@@ -10,20 +10,21 @@
   "license": "GPL-3.0",
   "dependencies": {
     "@discordjs/opus": "^0.5.3",
-    "body-parser": "^1.19.0",
+    "@twurple/api": "^5.0.13",
+    "@twurple/auth": "^5.0.13",
+    "@twurple/chat": "^5.0.13",
+    "@twurple/pubsub": "^5.0.13",
+    "body-parser": "^1.19.1",
     "cors": "^2.8.5",
     "discord.js": "^12.5.1",
-    "express": "^4.17.1",
-    "music-metadata": "^7.11.3",
-    "node": "^14.17.4",
-    "npm": "^7.21.1",
+    "express": "^4.17.2",
+    "music-metadata": "^7.11.7",
+    "node": "^14.18.3",
+    "node-fetch": "^3.2.0",
+    "npm": "^7.24.2",
     "os-utils": "0.0.14",
-    "postman-request": "^2.88.1-postman.28",
-    "twitch": "^4.6.6",
-    "twitch-auth": "^4.6.6",
-    "twitch-chat-client": "^4.6.6",
-    "twitch-pubsub-client": "^4.6.6",
+    "postman-request": "^2.88.1-postman.31",
     "youtube-search": "^1.1.6",
-    "ytdl-core": "^4.9.1"
+    "ytdl-core": "^4.10.0"
   }
 }

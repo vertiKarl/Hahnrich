@@ -11,3 +11,5 @@ steal.js
 *.bak
 *.zip
 *.swp
+tokens.json
+*.code-workspace

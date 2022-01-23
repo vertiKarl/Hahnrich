@@ -1,183 +1,16 @@
 <!DOCTYPE html>
 <head>
     <title>Hahnrich Control Panel</title>
+    <link rel="stylesheet" href="/static/main.css">
     <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.png">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
-
-        * {
-            transition: all 0.3s;
-        }
-
-        .title h1{
-            background-color:rgb(60, 31, 31);
-            padding: 10px 30px;
-            border-radius: 1rem;
-            filter: drop-shadow(10px 10px 4px black);
-        }
-
-        html {
-            background: rgb(119,88,120);
-            background: linear-gradient(165deg, rgba(119,88,120,1) 0%, rgba(56,80,83,1) 100%); 
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            width: 100%;
-            height: 100%;
-        }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .item {
-            padding: 10px;
-            /* background: rgba(255, 255, 255, 0.1); */
-            background: rgb(60, 31, 31);
-            border-radius: 1rem;
-            min-width: 5vw;
-            min-height: 25vh;
-            margin: 10px;
-            box-shadow: black;
-            filter: drop-shadow(10px 10px 4px black);
-        }
-
-        .item h1 {
-            text-align: center;
-            margin: 0;
-        }
-
-        .item ol {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-
-        }
-
-        .collapsible {
-            background-color: #eee;
-            color: #444;
-            cursor: pointer;
-            width: 100%;
-            border: none;
-            text-align: center;
-            outline: none;
-            font-size: 15px;
-        }
-
-        .active, .collapsible:hover {
-            background-color: #ccc;
-        }
-
-        .content {
-            padding: 0 18px;
-            overflow: hidden;
-            max-height: 0;
-            background-color: #f1f1f1;
-            color: black;
-            margin: 0;
-        }
-
-        .bottom-popout {
-            margin: 0;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            min-height: 15vh;
-            height: 15vh;
-            /* background-color: rgba(0, 0, 0, 0.7); */
-            transition: all 0.3s;
-        }
-
-        .bottom-popout input {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 16px;
-            width: 100vw;
-            padding: 10px 0;
-            bottom: 0;
-            border: 0;
-        }
-
-        .bottom-popout h1 {
-            z-index: 99;
-            filter: none;
-        }
-
-        .bottom-popout #log {
-            overflow: hidden;
-        }
-
-        #resizer {
-            width: 100%;
-            position: absolute;
-            top: 35px;
-            height: 5px;
-            background-color: black;
-            resize: vertical;
-            cursor: row-resize;
-        }
-
-        #collapser {
-            position: relative;
-            height: 25px;
-            top: 0;
-            left: 50%;
-            background: orange;
-            border: 5px solid black;
-            border-radius: 2rem 2rem 0 0;
-            width: 80px;
-            height: 40px;
-            cursor: pointer;
-        }
-
-        #collapser svg {
-            position: absolute;
-            left: 38%;
-            top: 25%;
-            transform-origin: 0 7px;
-            width: 16px;
-            height: 16px;
-        }
-
-        .hide {
-            line-height: 0 !important;
-            padding: 0 !important;
-            max-height: 0 !important;
-            visibility: hidden !important;
-
-        }
-
-        .disabled {
-            filter: grayscale(100%);
-            filter: blur(2px);
-        }
-
-        #log {
-            margin: 0;
-            padding: 0 10px;
-            overflow: scroll;
-            min-height: calc(100% - 16px - 40px);
-            transition: all 0.3s;
-            position: absolute;
-            top: 40px;
-            width: 100%;
-            box-sizing: border-box;
-            background-color: rgba(0, 0, 0, 0.7);
-            height: calc(100% - 16px - 40px);
-        }
-
-        #CPU canvas {
-            width: 100%;
-            height: 125px;
-        }
-    </style>
-
+    <script src="/static/index.js"></script>
+    
     <script>
+
+        let connected = false;
 
         const checks = {
             CPU: false,
@@ -209,34 +42,13 @@
             "[plugin]": "[command, ...args] runs command with args in plugin"
         }
 
-        window.onload = () => {
-
-            // https://stackoverflow.com/a/34487057
-
-            $("#resizer")[0].addEventListener('mousedown',initResize, false);
-
-            //Window funtion mousemove & mouseup
-            function initResize(e) {
-                $("#Terminal")[0].style.transition = "none";
-                window.addEventListener('mousemove', Resize, false);
-                window.addEventListener('mouseup', stopResize, false);
-            }
-            //resize the element
-            function Resize(e) {
-                $("#Terminal")[0].style.height = ( window.innerHeight - e.clientY) + 'px';
-            }
-            //on mouseup remove windows functions mousemove & mouseup
-            function stopResize(e) {
-                $("#Terminal")[0].style.transition = "all 0.3s";
-                window.removeEventListener('mousemove', Resize, false);
-                window.removeEventListener('mouseup', stopResize, false);
-            }
-
-            function connect() {
+        function connect() {
                 console.log("Trying to connect")
                 window.socket = new WebSocket("wss://local.karlology.eu:9000");
 
                 socket.onopen = function(e) {
+
+                    connected = true;
 
                     for(const [key, value] of Object.entries(options)) {
                         checks[key] = value;
@@ -261,6 +73,7 @@
                 }
 
                 socket.onclose = function(event) {
+                    connected = false;
                     for(const a of window.UNITS) {
                         a.classList.toggle("disabled")
                     }
@@ -293,6 +106,31 @@
                 }
             }
 
+        window.onload = () => {
+
+            // https://stackoverflow.com/a/34487057
+
+            $("#resizer")[0].addEventListener('mousedown',initResize, false);
+
+            //Window funtion mousemove & mouseup
+            function initResize(e) {
+                $("#Terminal")[0].style.transition = "none";
+                window.addEventListener('mousemove', Resize, false);
+                window.addEventListener('mouseup', stopResize, false);
+            }
+            //resize the element
+            function Resize(e) {
+                $("#Terminal")[0].style.height = ( window.innerHeight - e.clientY) + 'px';
+            }
+            //on mouseup remove windows functions mousemove & mouseup
+            function stopResize(e) {
+                $("#Terminal")[0].style.transition = "all 0.3s";
+                window.removeEventListener('mousemove', Resize, false);
+                window.removeEventListener('mouseup', stopResize, false);
+            }
+
+            
+
             connect()
             
 
@@ -303,7 +141,9 @@
                 }
             })
             tick()
-            setInterval(tick, 1000)
+            setInterval(() => {
+                if(connected) tick();
+            }, 1000)
         }
 
         function usage(cpu) {
@@ -336,25 +176,71 @@
                             {
                                 type: 'line',
                                 data: {
-                                datasets: [{
-                                    label: 'Usage',
-                                    backgroundColor: 'rgb(255, 99, 132)',
-                                    borderColor: 'rgb(255, 99, 132)',
-                                    data: [res.usage],
-                                }]
+                                    datasets: [{
+                                        backgroundColor: 'rgb(255, 99, 132)',
+                                        borderColor: 'rgb(255, 99, 132)',
+                                        data: [{x: new Date().toLocaleTimeString(), y: res.usage}],
+                                    }]
                                 },
-                                options: {}
+                                options: {
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    showLines: true,
+                                    responsive: true,
+                                    scales: {
+                                        x: {
+                                            display: false,
+                                            grid: {
+                                                display: false
+                                            }
+                                        },
+                                        xAxes: [{
+                                            ticks: {
+                                                maxTicksLimit: 5
+                                            }
+                                        }],
+                                        yAxes: [
+                                            {
+                                                ticks: {
+                                                    maxTicksLimit: 5
+                                                },
+                                                gridLines: {
+                                                    display: true
+                                                }
+                                            }
+                                        ],
+                                        y: {
+                                            grid: {
+                                                display: true,
+                                                color: "#FFF"
+                                            },
+                                            ticks: {
+                                                color: "#FFF"
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         );
 
                     } else {
                         console.log(res.usage.toFixed(2))
                         const dataPoints = window.graph.data.datasets[0].data;
-                        if(dataPoints.length > 100 ) {
-                            dataPoints.shift(res.usage)
+                        console.log("run " + dataPoints.length)
+                        if(dataPoints.length > 5 ) {
+                            dataPoints.shift()
+                            dataPoints.push({x: new Date().toLocaleTimeString(), y: res.usage})
                         } else {
-                            dataPoints.push(res.usage);
+                            dataPoints.push({x: new Date().toLocaleTimeString(), y: res.usage});
                         }
+
+                        /* window.graph.options.scales.x.ticks = {
+                            min: dataPoints[0].x
+                        } */
+                        
                         window.graph.update()
                     }
 
@@ -402,7 +288,7 @@
                                 }
                             })
                             const stats = document.createElement("div");
-                            stats.className = "content"
+                            stats.className = "contentCol"
                             const name = document.createElement("p");
                             const speed = document.createElement("p");
                             const usage = document.createElement("p");
@@ -479,7 +365,7 @@
                         uptime.innerHTML = "Uptime: " + Math.floor(res.uptime / 60 / 60 / 24) + " Days " + Math.floor(res.uptime / 60 / 60 % 24) + " Hours"
                         for(const interface in res.networkifs) {
                             const intf = document.createElement("p");
-                            intf.className = "content"
+                            intf.className = "contentCol"
 
                             // IPv4
                             const button = document.createElement("button");
@@ -596,22 +482,37 @@
 </head>
 
 <body>
-    <div class="title" style="display:flex;justify-content:center;">
-        <h1>Hahnrich Control Panel</h1>
-    </div>
-    <div class="container">
-        <div id="PC" class="item">
-            <h1>PC</h1>
-            <div id="pcInfo">
+    <nav class="navigator">
+        <button class="fa fa-bars" onclick="toggleNavbar()"></button>
+        <strong id="title"><a href="/">Hahnrich Control Panel</a></strong>
+        <img src="https://i.otto.de/i/otto/72e682cf-4578-567b-9208-5ec39c8a82bb/fischer-fahrraeder-e-bike-9-gang-shimano-sora-schaltwerk-kettenschaltung-heckmotor-250-w.jpg?$formatz$" alt=""></img>
+    </nav>
+    <div style="display:flex;position:relative">
+        <nav id="navbar">
+            <ul>
+                <a href="/no-category">No Category</a>
+                <a href="/clips">Clips</a>
+            </ul>
+        </nav>
+        <div class="divider">
+            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
+            </svg>
+        </div>
+        <div class="content">
+            <div id="PC" class="item">
+                <h1>PC</h1>
+                <div id="pcInfo">
+                </div>
             </div>
-        </div>
-        <div id="CPU" class="item">
-            <h1>CPU</h1>
-            <canvas id="cpuUsage" width="100" height="100"></canvas>
-        </div>
-        <div id="RAM" class="item">
-            <h1>RAM</h1>
-            <div id="ramInfo">
+            <div id="CPU" class="item">
+                <h1>CPU</h1>
+                <canvas id="cpuUsage" width="100" height="100"></canvas>
+            </div>
+            <div id="RAM" class="item">
+                <h1>RAM</h1>
+                <div id="ramInfo">
+                </div>
             </div>
         </div>
         <div id="Terminal" class="bottom-popout">
@@ -629,5 +530,4 @@
             <input class="disabled" disabled id="term" type="text" placeholder="Enter a command"></input>
         </div>
     </div>
-    <div id="test"></div>
 </body>

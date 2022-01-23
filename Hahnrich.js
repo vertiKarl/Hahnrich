@@ -136,7 +136,7 @@ module.exports = class Hahnrich {
         let com = msg.split(' ')
         if(com[0] === "twitchDL") {
           com.splice(0, 1)
-          this.plugins.get('twitch').send(com)
+          this.plugins.get('twitch-rework').send(com)
         } else if(com[0] === "discordDL") {
           com.splice(0, 1)
           this.plugins.get('discord').send(com)
