@@ -74,6 +74,7 @@ process.on('message', (msg) => {
           let link = info.thumbnailUrl.split('-preview')[0] + '.mp4'
           dhl.get(link).pipe(F.createWriteStream(`./plugins/discord/clips/${info.id}.mp4`)).on('finish', async () => {
             const data = info;
+            data.created_at = info.created_at +"";
             await client.query(
               Get(
                 Match(
