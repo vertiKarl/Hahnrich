@@ -140,6 +140,9 @@ module.exports = class Hahnrich {
         } else if(com[0] === "discordDL") {
           com.splice(0, 1)
           this.plugins.get('discord').send(com)
+        } else if(com[0] === "revoltDL") {
+          com.splice(0, 1)
+          this.plugins.get('revolt').send(com)
         } else {
           try{
             msg = JSON.parse(msg)

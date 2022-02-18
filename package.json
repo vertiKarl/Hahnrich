@@ -1,10 +1,10 @@
 {
   "name": "hahnrich",
-  "version": "4.3.7",
+  "version": "4.3.8",
   "description": "the latest rework of my hahnrich bot",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node --experimental-specifier-resolution=node index.js"
   },
   "author": "vertikarl",
   "license": "GPL-3.0",
@@ -18,12 +18,14 @@
     "cors": "^2.8.5",
     "discord.js": "^12.5.1",
     "express": "^4.17.2",
+    "faunadb": "^4.5.2",
     "music-metadata": "^7.11.7",
     "node": "^14.18.3",
     "node-fetch": "^3.2.0",
     "npm": "^7.24.2",
     "os-utils": "0.0.14",
     "postman-request": "^2.88.1-postman.31",
+    "revolt.js": "^5.2.8",
     "youtube-search": "^1.1.6",
     "ytdl-core": "^4.10.0"
   }
