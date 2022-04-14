@@ -19,7 +19,6 @@ import search from "youtube-search";
 import Song, { SongType } from "../MediaPlayer/Song";
 import LocalSongs from "../MediaPlayer/LocalSongs";
 import { ytKey } from "../config.json";
-import Logger from "../../../Logger";
 import EventEmitter from "events";
 
 export default class MediaPlayerCommand extends Command {
@@ -82,8 +81,6 @@ export default class MediaPlayerCommand extends Command {
     events: EventEmitter
   ): Promise<boolean> {
     const func = interaction.options.getSubcommand();
-
-    Logger.isDebug = true;
     
     this.debug("Starting mp command!")
 

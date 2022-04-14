@@ -1,22 +1,22 @@
-import Config from "./HahnrichConfig";
 import Module from "./Module";
 import Plugin from "./Plugin";
-import config from "../config.json";
 import fs, { PathLike } from "fs";
 import plugins from "./Plugins";
 import modules from "./Modules";
 import Logger from "./Logger";
+import {version} from "../version";
 
 export default class Hahnrich extends Logger {
     plugins: Map<String, Plugin> = new Map<String, Plugin>();
     private modules: Map<String, Module> = new Map<String, Module>();
-    private config: Config = config;
+
 
     isDebug = true;
     emoji = '🐔'
 
     constructor() {
         super()
+        Logger.HahnrichVersion = version;
         this.init();
     }
 
@@ -59,23 +59,19 @@ export default class Hahnrich extends Logger {
 
     init(): void {
         // Show logo
-        const logo = fs.readFileSync(__dirname + "/../logo.txt", {encoding: "utf-8"})
+        const logo = fs.readFileSync(__dirname + "/../../logo.txt", {encoding: "utf-8"})
         console.log(logo.toString())
 
         // Load Plugins
         plugins.forEach(plugin => {
             const instance = new (plugin)();
-            if(!config.blacklist.includes(plugin.name)) {
-                this.loadPlugin(instance);
-            }
+            this.loadPlugin(instance);
         })
 
         // Load Modules
         modules.forEach(module => {
             const instance = new (module);
-            if(!config.blacklist.includes(module.name)) {
-                this.loadModule(instance);
-            }
+            this.loadModule(instance);
         })
     }
 }

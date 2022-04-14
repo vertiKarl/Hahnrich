@@ -1,7 +1,8 @@
 import fs from "fs";
 
 export default abstract class Logger {
-
+    
+    static HahnrichVersion: string;
     static isDebug = false;
     abstract emoji: string
 

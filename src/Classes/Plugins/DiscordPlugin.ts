@@ -1,6 +1,6 @@
 import Plugin from "../Plugin";
 import { Intents, Interaction} from "discord.js";
-import { clientId, guildId, token, version } from "./Discord/config.json";
+import { clientId, guildId, token } from "./Discord/config.json";
 import Command from "./Discord/Command";
 import Commands from "./Discord/Commands"
 import { REST } from "@discordjs/rest";
@@ -8,7 +8,6 @@ import { Routes } from "discord-api-types/v9";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import ExtendedClient from "./Discord/ExtendedClient";
 import EventEmitter from "events";
-
 
 export default class DiscordPlugin extends Plugin {
     name = "Discord";
@@ -68,7 +67,7 @@ export default class DiscordPlugin extends Plugin {
 
             client.user.setPresence({
                 activities: [{
-                        name: `Version ${version}`,
+                        name: `Version ${DiscordPlugin.HahnrichVersion}`,
                         type: "STREAMING",
                         url: "https://twitch.tv/vertiKarl",
                     }],

@@ -4,7 +4,7 @@
         "target": "esnext",
         "noImplicitAny": true,
         "removeComments": true,
-        "watch": true,
+        "watch": false,
         "lib": ["ES2021"],
         "outDir": "./dist",
         "rootDir": "./src",
