@@ -27,3 +27,11 @@ Development mode: `npm run dev`
 Compile into JavaScript: `npm run build`
 
 Start compiled JavaScript: `npm start`
+
+# Important!
+
+When using plugins fill in the needed information in their config.json file respectifly.
+
+Examples:
+Discord: src/Discord/config.json
+Twitch: src/Twitch/config.json
