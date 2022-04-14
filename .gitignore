@@ -4,3 +4,4 @@ config.json
 Songs/*
 Clips/*
 tokens.json
+latest.log
