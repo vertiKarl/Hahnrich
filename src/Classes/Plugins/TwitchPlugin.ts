@@ -8,7 +8,6 @@ import {
 } from "./Twitch/config.json";
 import { RefreshingAuthProvider } from "@twurple/auth";
 import { ApiClient } from "@twurple/api";
-import https from "https";
 import faunadb, { Collection, Create, Get, Index, Match } from "faunadb";
 import Axios from "axios";
 

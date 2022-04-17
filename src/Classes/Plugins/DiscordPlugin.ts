@@ -60,7 +60,7 @@ export default class DiscordPlugin extends Plugin {
             intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]
         })
 
-        client.once('ready', () => {
+        client.on('ready', () => {
             if(!client?.user) return;
 
             this.log(`Logged in as ${client.user.tag}`);

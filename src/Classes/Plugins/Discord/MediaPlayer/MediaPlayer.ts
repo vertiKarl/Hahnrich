@@ -2,6 +2,7 @@ import { AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection
 import { Client, CommandInteraction, GuildMember, Interaction, VoiceBasedChannel, VoiceChannel } from "discord.js"
 import fs from "fs"
 import Logger from "../../../Logger"
+import ExtendedClient from "../ExtendedClient"
 import Song, { SongType } from "./Song"
 import SongQueue from "./SongQueue"
 
@@ -14,7 +15,7 @@ export default class MediaPlayer extends Logger {
     channel: VoiceChannel;
     readonly maxIdleTime: number = 5 * 60 * 1000 //  5 Minutes
 
-    constructor(private client: Client, public interaction: CommandInteraction) {
+    constructor(private client: ExtendedClient, public interaction: CommandInteraction) {
         super()
 
         const member = interaction.member;
@@ -45,6 +46,12 @@ export default class MediaPlayer extends Logger {
         this.player.on(AudioPlayerStatus.Idle, () => {
             this.debug("Idle, trying to find next song")
             this.isPlaying = false;
+
+            if(!this.connection) {
+                client.mediaplayers.delete(channel.guild.id);
+                return;
+            }
+
             if(this.queue.hasNext()) {
                this.debug("Has next, trying to play")
                // Next song!
@@ -55,7 +62,8 @@ export default class MediaPlayer extends Logger {
                 this.queue.queue = [];
                 const timer = setTimeout(() => {
                     if(!this.isPlaying && this.queue.length === 0) {
-                        this.connection.disconnect();
+                        this.connection.destroy();
+                        client.mediaplayers.delete(channel.guild.id);
                     } else if(this.queue.length > 1) {
                         this.play()
                     }
