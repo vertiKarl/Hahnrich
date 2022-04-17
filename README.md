@@ -33,5 +33,8 @@ Start compiled JavaScript: `npm start`
 When using plugins fill in the needed information in their config.json file respectifly.
 
 Examples:
+
 Discord: src/Discord/config.json
+
 Twitch: src/Twitch/config.json
+and tokens.json in project-root
