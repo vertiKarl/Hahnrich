@@ -1,4 +1,4 @@
-import { AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice"
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionDisconnectedOtherState, VoiceConnectionDisconnectedState, VoiceConnectionDisconnectedWebSocketState, VoiceConnectionDisconnectReason, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice"
 import { Client, CommandInteraction, GuildMember, Interaction, VoiceBasedChannel, VoiceChannel } from "discord.js"
 import fs from "fs"
 import Logger from "../../../Logger"
@@ -37,10 +37,38 @@ export default class MediaPlayer extends Logger {
             if(!this.isPlaying && this.queue.hasNext()) this.play();
         })
 
-        // TODO: Add reconnection
-        // this.connection.on("stateChange", (last, recent) => {
+        this.connection.on(VoiceConnectionStatus.Disconnected, (
+            oldState: VoiceConnectionState,
+            newState: (VoiceConnectionDisconnectedOtherState & { status: VoiceConnectionStatus.Disconnected; }) | (VoiceConnectionDisconnectedWebSocketState)
+            ) => {
+                this.debug("State:", newState.reason)
+                switch(newState.reason) {
+                    case VoiceConnectionDisconnectReason.EndpointRemoved: {
+                        this.connection.destroy();
+                        client.mediaplayers.delete(channel.guild.id);
+                        break;
+                    }
+                    case VoiceConnectionDisconnectReason.Manual: {
+                        this.connection.destroy();
+                        client.mediaplayers.delete(channel.guild.id);
+                        break;
+                    }
+                    case VoiceConnectionDisconnectReason.WebSocketClose: {
+                        this.connection.destroy();
+                        client.mediaplayers.delete(channel.guild.id);
+                        break;
+                    }
+                    default: {
+                        // reconnect
+                        this.isPlaying = false;
+                        this.player.pause();
+                        this.connection.rejoin();
+                        this.play();
+                        break;
+                    }
+                }
             
-        // })
+        })
 
         // Auto timeout and disconnect
         this.player.on(AudioPlayerStatus.Idle, () => {
@@ -103,7 +131,13 @@ export default class MediaPlayer extends Logger {
         if(this.connection.state.status === 'ready') {
             this.isPlaying = true;
             this.debug("Queue-length: " + this.queue.length)
-            this.player.play(this.queue.currentSong.resource);
+            this.debug(this.player.state.status)
+            if(this.player.state.status === AudioPlayerStatus.Paused) {
+                this.player.unpause();
+            } else {
+                this.player.play(this.queue.currentSong.resource);
+            }
+            
             return this.queue.currentSong;
         } else {
             this.debug("Connection not ready!")
