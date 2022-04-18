@@ -1,10 +1,13 @@
 import fs from "fs";
 
+import {version} from "../version";
+
 export default abstract class Logger {
     
     static HahnrichVersion: string;
-    static isDebug = false;
-    abstract emoji: string
+    
+    static isDebug = version.startsWith("devel-");
+    abstract emoji: string;
 
     get time(): string {
         const date = new Date();
@@ -59,23 +62,17 @@ export default abstract class Logger {
         // make objects visible
         for(const i in content) {
             if(typeof content[i] == "object") {
-                content[i] = JSON.stringify(content[i], this.getCircularReplacer(), 2);
+                if(
+                    Object.getOwnPropertyNames(content[i]).includes("stack") &&
+                    Object.getOwnPropertyNames(content[i]).includes("message")
+                    ) {
+                    content[i] = content[i].message + "\n" + content[i].stack
+                } else {
+                    content[i] = JSON.stringify(content[i], Object.getOwnPropertyNames(content[i]), 2);
+                }
             }
         }
 
         return content;
     }
-
-    private getCircularReplacer = () => {
-        const seen = new WeakSet();
-        return (key: any, value: any) => {
-          if (typeof value === "object" && value !== null) {
-            if (seen.has(value)) {
-              return;
-            }
-            seen.add(value);
-          }
-          return value;
-        };
-      };
 }

@@ -20,6 +20,25 @@ export default class LocalSongs extends Logger {
         return songs;
     }
 
+    static cleanString(str: string) {
+        // remove file extension from string
+        const extension = /.{3}$/g;
+        str = str.replaceAll(extension, "");
+
+        // replace all characters that might get used as seperators
+        const seperators = /([\_\-,.;:><\\\/\[\]\{\}\%\$\§\"\'\`\´\+\-\*])/g;
+        str = str.replaceAll(seperators, " ");
+
+        // remove all non printable characters
+        const mainPass = /([^\w0-9 _-])/g;
+        str = str.replaceAll(mainPass, "");
+
+        // remove duplicate whitespace characters
+        str = str.replaceAll(/\s+/g, " ");
+
+        return str;
+    }
+
     static getSongs(): Array<string> {
         return fs.readdirSync(__dirname + "/../../../../../Songs/", {
             encoding: "utf-8"

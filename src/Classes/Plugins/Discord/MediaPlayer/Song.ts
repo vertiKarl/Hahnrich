@@ -2,6 +2,7 @@ import { AudioResource, createAudioResource } from "@discordjs/voice";
 import ytdl, { Author } from "ytdl-core";
 import { join } from "path";
 import Logger from "../../../Logger";
+import LocalSongs from "./LocalSongs";
 
 export enum SongType {
     YOUTUBE, FILE, EMBED
@@ -39,7 +40,7 @@ export default class Song extends Logger {
                 break;
             case SongType.FILE:
                 return new Promise((resolve) => {
-                    resolve(this.source.replace(".mp3", ""));
+                    resolve(LocalSongs.cleanString(this.source));
                 })
             case SongType.EMBED:
                 return new Promise((resolve) => {

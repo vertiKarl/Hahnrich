@@ -11,7 +11,6 @@ export default class Hahnrich extends Logger {
     private modules: Map<String, Module> = new Map<String, Module>();
 
 
-    isDebug = true;
     emoji = '🐔'
 
     constructor() {

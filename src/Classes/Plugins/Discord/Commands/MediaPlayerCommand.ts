@@ -79,6 +79,9 @@ export default class MediaPlayerCommand extends Command {
         cmd.setName("current").setDescription("Displays currently playing song")
       )
       .addSubcommand((cmd) => 
+        cmd.setName("clear").setDescription("Clears the current queue")
+      )
+      .addSubcommand((cmd) => 
         cmd.setName("debug")
         .setDescription("If Hahnrich got stuck")
       );
@@ -91,7 +94,6 @@ export default class MediaPlayerCommand extends Command {
   ): Promise<boolean> {
     const func = interaction.options.getSubcommand();
     
-    this.debug("Starting mp command!")
 
     const member = interaction.member;
     if (!(member instanceof GuildMember))
@@ -100,6 +102,12 @@ export default class MediaPlayerCommand extends Command {
     const channel = member.voice.channel;
 
     let mediaplayer = client.mediaplayers.get(member.guild.id);
+    let songquiz = client.songquizes.get(member.guild.id);
+
+    if(songquiz && !songquiz.stopped) {
+      interaction.reply("Mediaplayer is locked while songquiz is active!")
+      return true;
+    }
     
 
     try {
@@ -333,6 +341,7 @@ export default class MediaPlayerCommand extends Command {
             });
 
           if (mediaplayer.queue.length >= 1) {
+            this.debug("Queue:")
             for(let i = 0; i < Math.min(5, songs.length); i++) {
               this.debug(i+1, songs[i].name)
               embed.addField(`${i+1}: ${await songs[i].name}`, "\u200B");
@@ -352,7 +361,6 @@ export default class MediaPlayerCommand extends Command {
         case "random": {
           const amount = interaction.options.getNumber("amount") || 1;
           LocalSongs.randomSongs(amount).forEach((song) => {
-            this.debug("Song", song)
             mediaplayer?.add(song, SongPosition.END);
           });
 
@@ -365,9 +373,25 @@ export default class MediaPlayerCommand extends Command {
           const song = mediaplayer.queue.currentSong;
           const nextSong = mediaplayer.queue.nextSong;
           
-          this.showSong(interaction, song, nextSong);
+          if(song) {
 
+            this.showSong(interaction, song, nextSong);
+          } else {
+            interaction.editReply("Nothing to see here")
+          }
+          return true;
           break;
+        }
+        case "clear": {
+          await interaction.deferReply();
+          const temp = mediaplayer.removeAt(0, mediaplayer.queue.length);
+          if(temp instanceof Song) {
+            interaction.editReply("Couldn't delete everything!")
+            return false;
+          } else {
+            interaction.editReply("Queue cleared!")
+            return true;
+          }
         }
         case "debug": {
           mediaplayer.play(true);
@@ -388,7 +412,6 @@ export default class MediaPlayerCommand extends Command {
     switch (song.type) {
       case SongType.YOUTUBE: {
         const artist = await song.artist;
-        this.debug(artist.name)
         const thumbnails = artist.thumbnails;
         if (!thumbnails)
           throw new Error("Current artist has no thumbnails!");

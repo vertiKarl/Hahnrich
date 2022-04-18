@@ -118,8 +118,6 @@ export default class TwitchPlugin extends Plugin {
               (res as FaunaClip).ref.id
             );
           });
-
-          this.debug(info);
         })
         .catch((err) => {
           this.error("Error when downloading clip: " + err);

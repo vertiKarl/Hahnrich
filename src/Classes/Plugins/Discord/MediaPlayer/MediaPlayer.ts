@@ -33,8 +33,9 @@ export default class MediaPlayer extends Logger {
         })
 
         this.connection.on(VoiceConnectionStatus.Ready, () => {
+            this.debug("VC Ready, connecting")
             this.connection.subscribe(this.player);
-            if(!this.isPlaying && this.queue.hasNext()) this.play();
+            if(!this.isPlaying) this.play();
         })
 
         this.connection.on(VoiceConnectionStatus.Disconnected, (
@@ -128,7 +129,8 @@ export default class MediaPlayer extends Logger {
     }
 
     removeAt(index: number, amount: number): Song | null {
-        if(index >= 0 && index < this.queue.length && index + amount < this.queue.length && amount > 0) {
+        this.debug("Trying to remove", amount, "songs at", index);
+        if(index >= 0 && index < this.queue.length && index + amount <= this.queue.length && amount > 0) {
             this.queue.splice(index, amount);
             return this.play(index === 0);
         }
@@ -137,10 +139,12 @@ export default class MediaPlayer extends Logger {
     }
 
     play(force = false): Song | null {
+        this.debug("isPlaying:", this.isPlaying);
         if(!force && this.isPlaying) {
             this.debug("Already playing!")
             return this.queue.currentSong;
         }
+        this.debug("Ready?", this.connection.state.status === 'ready')
         if(this.connection.state.status === 'ready') {
             this.isPlaying = true;
             this.debug("Queue-length: " + this.queue.length)
@@ -148,14 +152,25 @@ export default class MediaPlayer extends Logger {
             if(this.player.state.status === AudioPlayerStatus.Paused) {
                 this.debug("trying to unpause")
                 this.player.unpause();
+            } else if(this.player.state.status === AudioPlayerStatus.AutoPaused) {
+                this.debug("auto paused! trying to unpause!")
+                this.player.unpause();
             } else {
                 this.debug("trying to play")
                 try {
-                    this.player.play(this.queue.currentSong.resource);
+                    // if(!this.queue.hasNext()) {
+                    //     this.debug("nothing to play!")
+                    //     this.isPlaying = false;
+                    //     this.player.stop();
+                    //     return null;
+                    // }
+                    // only if there is a song in queue
+                    if(this.queue.currentSong)
+                        this.player.play(this.queue.currentSong.resource);
                 } catch(err) {
                     this.error(err);
                     this.isPlaying = false;
-                    if(this.connection) {
+                    if(this.connection && this.queue.currentSong) {
                         this.play()
                     }
                 }
@@ -163,9 +178,19 @@ export default class MediaPlayer extends Logger {
             
             return this.queue.currentSong;
         } else {
+
+            // setTimeout(() => {
+            //     this.debug("delaying play (waiting for connection)")
+            //     this.play(true);
+            // }, 1000)
             this.debug("Connection not ready!")
         }
         return null;
+    }
+
+    stop(): void {
+        this.connection.destroy();
+        this.client.mediaplayers.delete(this.channel.guild.id);
     }
 
     changeChannel(channel: VoiceChannel): void {

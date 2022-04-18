@@ -11,7 +11,7 @@ export default class SongQueue extends EventEmitter {
         super()
     }
 
-    get currentSong() {
+    get currentSong(): Song | null {
         return this.queue[0];
     }
 
@@ -25,6 +25,12 @@ export default class SongQueue extends EventEmitter {
 
     get length() {
         return this.queue.length;
+    }
+
+    clone(): SongQueue {
+        const q = new SongQueue();
+        q.queue = this.queue.slice(0);
+        return q;
     }
 
     /**
@@ -45,7 +51,6 @@ export default class SongQueue extends EventEmitter {
     }
 
     pushToPosition(song: Song, position: SongPosition) {
-        console.debug("Position", position)
         switch(position) {
             case SongPosition.NOW:
                 this.queue[0] = song;
@@ -76,9 +81,10 @@ export default class SongQueue extends EventEmitter {
      * @param deleteCount amount of songs to remove
      */
     splice(from: number, deleteCount: number): void {
-        if(from + deleteCount >= this.length) {
+        if(from + deleteCount > this.length) {
             throw new Error("Splicing out of bounds!")
         };
+
         this.queue.splice(from, deleteCount);
     }
 }
