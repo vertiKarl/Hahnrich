@@ -17,6 +17,7 @@ import ExtendedClient from "../ExtendedClient";
 import MediaPlayer from "../MediaPlayer/MediaPlayer";
 import search from "youtube-search";
 import Song, { SongType } from "../MediaPlayer/Song";
+import { SongPosition } from "../MediaPlayer/SongQueue";
 import LocalSongs from "../MediaPlayer/LocalSongs";
 import { ytKey } from "../config.json";
 import EventEmitter from "events";
@@ -46,8 +47,9 @@ export default class MediaPlayerCommand extends Command {
             position
               .setName("position")
               .setDescription("Add song to:")
-              .addChoice("End of queue", "end")
-              .addChoice("Start of queue", "start")
+              .addChoice("Now", "now")
+              .addChoice("Next", "next")
+              .addChoice("End", "end")
               .setRequired(false)
           )
       )
@@ -57,6 +59,9 @@ export default class MediaPlayerCommand extends Command {
           .setDescription("Skips specified amount of songs in queue")
           .addNumberOption((option) =>
             option.setName("amount").setDescription("Amount of songs to skip")
+          )
+          .addNumberOption((option) => 
+            option.setName("position").setDescription("Skip song at specific position")
           )
       )
       .addSubcommand((cmd) =>
@@ -72,6 +77,10 @@ export default class MediaPlayerCommand extends Command {
       )
       .addSubcommand((cmd) =>
         cmd.setName("current").setDescription("Displays currently playing song")
+      )
+      .addSubcommand((cmd) => 
+        cmd.setName("debug")
+        .setDescription("If Hahnrich got stuck")
       );
   }
 
@@ -94,17 +103,30 @@ export default class MediaPlayerCommand extends Command {
     
 
     try {
+      // only join if no connection exists and it actually requires a voice connection
       if (!mediaplayer) {
-        if(!(channel instanceof VoiceChannel)) throw new Error("No Mediaplayer!");
+        // when there is no mediaplayer and it doesnt trigger a join
+        // there's no point executing anything
+        if(!this.isJoinCommand(func)) {
+          interaction.reply("No active mediaplayer!")
+          return false;
+        }
+
+        // is user connected to a voicechannel?
+        if(!(channel instanceof VoiceChannel)) {
+          interaction.reply("You are not connected to a voicechannel!");
+          return false;
+        }
+        
         mediaplayer = new MediaPlayer(client, interaction);
         client.mediaplayers.set(member.guild.id, mediaplayer);
+        mediaplayer.interaction = interaction;
+        
       } else if (channel instanceof VoiceChannel && mediaplayer.channel !== channel) {
         mediaplayer.changeChannel(channel);
+        mediaplayer.interaction = interaction;
       }
 
-      mediaplayer.interaction = interaction;
-
-      this.debug("Got mediaplayer!")
 
       switch (func) {
         case "add": {
@@ -113,14 +135,34 @@ export default class MediaPlayerCommand extends Command {
           let target = interaction.options.getString("target") || "";
           const position = interaction.options.getString("position");
           if (!target) throw new Error("No target for add command");
+
+          const potentialType = Song.parseType(target);
+          if(potentialType === SongType.YOUTUBE) {
+            let pos: SongPosition;
+            switch(position) {
+              case "now":
+                pos = SongPosition.NOW;
+                break;
+              case "nex":
+                pos = SongPosition.NEXT;
+                break;
+              default:
+                pos = SongPosition.END;
+                break;
+            }
+            const song = mediaplayer.add(new Song(potentialType, target), pos);
+            this.showSong(interaction, song);
+            return true;
+          }
           
           let localResults: Array<MessageSelectOptionData> = [];
           LocalSongs.getSongs().forEach((song) => {
-            if (song.includes(target)) {
+            if(localResults.length >= 5) return;
+            if (song.toLowerCase().includes(target.toLowerCase())) {
               localResults.push({
                 label: song.replace(".mp3", ""),
                 description: "Local File",
-                value: (__dirname + "../MediaPlayer/Songs/" + song),
+                value: (song),
               });
             }
           });
@@ -149,34 +191,42 @@ export default class MediaPlayerCommand extends Command {
                   value: res.link,
                 });
               });
-              const row = new MessageActionRow()
+
+              const components = []
+
+              const rowLocal = new MessageActionRow()
+              const rowOnline = new MessageActionRow()
 
               if(localResults.length > 0) {
-                row.addComponents(
+                rowLocal.addComponents(
                   new MessageSelectMenu()
                   .setCustomId("local")
                   .setPlaceholder("- Local Results -")
                   .addOptions(localResults)
                 )
+
+                components.push(rowLocal)
               }
               if(onlineResults.length > 0) {
-                row.addComponents(
+                rowOnline.addComponents(
                   new MessageSelectMenu()
                   .setCustomId("online")
                   .setPlaceholder("- Online Results - ")
                   .addOptions(onlineResults)
                 )
+
+                components.push(rowOnline)
               }
 
               this.debug(`Results:\nOnline:${onlineResults.length}\nLocal:${localResults.length}`)
               if(onlineResults.length === 0 && localResults.length === 0) throw new Error("No results!")
-              const message = await interaction.editReply({components: [row]});
+              const message = await interaction.editReply({components});
 
               if (!(message instanceof Message)) throw new Error("message is not a message!");
 
               const collector = message.createMessageComponentCollector({
                 max: 1,
-                time: 5000,
+                time: 15000,
               });
 
               collector.on(
@@ -184,37 +234,53 @@ export default class MediaPlayerCommand extends Command {
                 async (selectInteraction: SelectMenuInteraction) => {
                   if(!mediaplayer) throw new Error("No mediaplayer found :(");
                   await selectInteraction.deferReply();
+
                   let song;
-
-                  // TODO:
-                  // Might want to switch to the beneath implementation for optimization!
-                  // this reduces the number of parses needed to figure out SongType
-
-                  // switch(selectInteraction.customId) {
-                  //     case "online":
-                  //         song = new Song(SongType.YOUTUBE, selectInteraction.values[0]);
-                  //         break;
-                  //     case "local":
-                  //         song = new Song(SongType.FILE, selectInteraction.values[0]);
-                  //         break;
-                  // }
+                  switch(selectInteraction.customId) {
+                      case "online":
+                          song = new Song(SongType.YOUTUBE, selectInteraction.values[0]);
+                          break;
+                      // primarly "local"
+                      default:
+                          song = new Song(SongType.FILE, selectInteraction.values[0]);
+                          break;
+                  }
 
                   let addedSong: Song;
 
+
                   switch (position) {
                     // TODO: add thumbnails when adding videos!
-                    case "start":
-                      // TODO: add via unshift
-                      addedSong = mediaplayer.add(selectInteraction.values[0]);
-                      mediaplayer.skipTo(1);
+                    case "now":
+                      addedSong = mediaplayer.add(song, SongPosition.NOW);
+                      break;
+                    case "next":
+                      addedSong = mediaplayer.add(song, SongPosition.NEXT);
                       break;
                     default:
-                      addedSong = mediaplayer.add(selectInteraction.values[0]);
+                      this.debug("triggering default add to queue (adding to end)")
+                      addedSong = mediaplayer.add(song, SongPosition.END);
                   }
 
                   this.showSong(selectInteraction, addedSong);
+
+                  try {
+                    await message.delete();
+                  } catch(err) {
+                    this.error("Couldn't delete message", err);
+                  }
                 }
               );
+              
+                // clean up
+              collector.on("end", async () => {
+                if(!message || !message.deletable) return;
+                try {
+                  await message.delete();
+                } catch(err) {
+                  this.error("Couldn't delete message", err);
+                }
+              })
             }
           );
 
@@ -223,21 +289,38 @@ export default class MediaPlayerCommand extends Command {
         case "skip": {
           await interaction.deferReply();
           const amount = interaction.options.getNumber("amount") || 1;
-          const song = mediaplayer.skipTo(amount);
+          let position = interaction.options.getNumber("position");
+
+          if(position === null || position <= 0) {
+            position = 0;
+          } else {
+            // so user can use the same numbers that are shown in queue
+            // indexing for user starts at 1
+            position--;
+          }
+
+          this.debug("Trying to remove songs from:", position, "to", position+amount);
+          
+          const song = mediaplayer.removeAt(position, amount);
 
           
 
-          if(!song) return false;
+          if(!song) {
+            interaction.editReply("Skipping not possible, did you specify a negative amount?")
+            return false;
+          }
 
           const nextSong = mediaplayer.queue.nextSong;
 
           this.showSong(interaction, song, nextSong);
+          return true;
         }
         case "queue": {
+          const songs = mediaplayer.queue.queue
           let embed = new MessageEmbed();
           embed
             .setColor("#02f3f3")
-            .setTitle("Queue:")
+            .setTitle(`Queue[${songs.length}]:`)
             .setURL(
               "https://zap-hosting.com/de/shop/donation/b46e5e7b07106dad59febaf3b66fd5e5/"
             )
@@ -250,11 +333,9 @@ export default class MediaPlayerCommand extends Command {
             });
 
           if (mediaplayer.queue.length >= 1) {
-            let i = 1;
-            const songs = mediaplayer.queue.queue
-            for(const song of songs) {
-              embed.addField(`${i}: ${await song.name}`, "\u200B");
-              i++;
+            for(let i = 0; i < Math.min(5, songs.length); i++) {
+              this.debug(i+1, songs[i].name)
+              embed.addField(`${i+1}: ${await songs[i].name}`, "\u200B");
             };
           } else {
             embed.addField(
@@ -272,7 +353,7 @@ export default class MediaPlayerCommand extends Command {
           const amount = interaction.options.getNumber("amount") || 1;
           LocalSongs.randomSongs(amount).forEach((song) => {
             this.debug("Song", song)
-            mediaplayer?.add(song);
+            mediaplayer?.add(song, SongPosition.END);
           });
 
           interaction.reply("Added " + amount + " random songs to queue!")
@@ -287,6 +368,10 @@ export default class MediaPlayerCommand extends Command {
           this.showSong(interaction, song, nextSong);
 
           break;
+        }
+        case "debug": {
+          mediaplayer.play(true);
+          return true;
         }
       }
     } catch (error) {
@@ -321,7 +406,7 @@ export default class MediaPlayerCommand extends Command {
       default: {
         embed
           .setAuthor({
-            name: "Local File",
+            name: "📁 Local File",
           })
           .addField("\u200B", await song.name);
       }
@@ -334,6 +419,15 @@ export default class MediaPlayerCommand extends Command {
     }
 
     interaction.editReply({ embeds: [ embed ] })
+  }
+
+ /**
+ * Checks if command triggers join
+ * @param func Subcommand string to check
+ * @returns boolean
+ */
+  isJoinCommand(func: string): boolean {
+    return ["add", "random"].includes(func);
   }
 
   async stop(): Promise<boolean> {

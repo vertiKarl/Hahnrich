@@ -7,7 +7,8 @@ export default abstract class Logger {
     abstract emoji: string
 
     get time(): string {
-        return new Date().toLocaleDateString();
+        const date = new Date();
+        return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     }
 
     /**
@@ -15,7 +16,7 @@ export default abstract class Logger {
      * @param data content to log to file
      */
     async log2file(...data: any): Promise<void> {
-        fs.appendFileSync("./latest.log", data.join(" "), { encoding: "utf-8"})
+        fs.appendFileSync("./latest.log", "\n" + data.join(" "), { encoding: "utf-8"})
     }
 
     /**
@@ -25,7 +26,7 @@ export default abstract class Logger {
     async debug(...content: any): Promise<void> {
         if(!Logger.isDebug) return;
         content = this.parseObjects(content);
-        console.log(this.emoji + " [DEBUG] ["+this.time+"]", content.join(" "))
+        console.debug(this.emoji + " [DEBUG] ["+this.time+"]", content.join(" "))
     }
 
     /**

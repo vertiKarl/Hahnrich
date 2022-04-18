@@ -4,7 +4,7 @@ import fs from "fs"
 import Logger from "../../../Logger"
 import ExtendedClient from "../ExtendedClient"
 import Song, { SongType } from "./Song"
-import SongQueue from "./SongQueue"
+import SongQueue, { SongPosition } from "./SongQueue"
 
 export default class MediaPlayer extends Logger {
     queue = new SongQueue()
@@ -41,7 +41,7 @@ export default class MediaPlayer extends Logger {
             oldState: VoiceConnectionState,
             newState: (VoiceConnectionDisconnectedOtherState & { status: VoiceConnectionStatus.Disconnected; }) | (VoiceConnectionDisconnectedWebSocketState)
             ) => {
-                this.debug("State:", newState.reason)
+                this.debug("Got disconnected reason:", newState.reason)
                 switch(newState.reason) {
                     case VoiceConnectionDisconnectReason.EndpointRemoved: {
                         this.connection.destroy();
@@ -83,8 +83,8 @@ export default class MediaPlayer extends Logger {
             if(this.queue.hasNext()) {
                this.debug("Has next, trying to play")
                // Next song!
-               this.skipTo(1);
-               this.play();
+               this.removeAt(0, 1);
+               this.play(true);
             } else {
                 this.debug("nothing to play, starting leave countdown")
                 this.queue.queue = [];
@@ -93,38 +93,51 @@ export default class MediaPlayer extends Logger {
                         this.connection.destroy();
                         client.mediaplayers.delete(channel.guild.id);
                     } else if(this.queue.length > 1) {
-                        this.play()
+                        this.play(true)
                     }
                 }, this.maxIdleTime);
             }
         })
 
         this.queue.on("push", () => {
-            if(!this.isPlaying) {
-                this.play();
-            }
+            this.debug("Pushed something, startin this.play()")
+            this.play();
+        })
+
+        this.queue.on("SongChange", () => {
+            this.debug("Triggering refresh")
+            this.play(true);
         })
     }
 
-    add(source: string): Song {
-        this.debug(source)
-        const song = new Song(Song.parseType(source), source);
-        this.debug(`Adding Song at:\n${song.source}\nType: ${Song.parseType(source)}`)
-        this.queue.push(song);
+    add(source: string | Song, position: SongPosition): Song {
+        let song: Song;
+
+        if(source instanceof Song) {
+            song = source;
+        } else {
+            song = new Song(Song.parseType(source), source);
+        }
+
+        (async () => {
+            this.debug(`Adding ${await song.name} at:\n${position}\nType: ${song.type}`)
+        })()
+
+        this.queue.pushToPosition(song, position)
         return song;
     }
 
-    skipTo(index: number): Song | null {
-        if(index > 0 && index < this.queue.length) {
-            this.queue.splice(0, index);
-            return this.play();
+    removeAt(index: number, amount: number): Song | null {
+        if(index >= 0 && index < this.queue.length && index + amount < this.queue.length && amount > 0) {
+            this.queue.splice(index, amount);
+            return this.play(index === 0);
         }
 
         return null;
     }
 
-    play(): Song | null {
-        if(this.isPlaying) {
+    play(force = false): Song | null {
+        if(!force && this.isPlaying) {
             this.debug("Already playing!")
             return this.queue.currentSong;
         }
@@ -133,9 +146,19 @@ export default class MediaPlayer extends Logger {
             this.debug("Queue-length: " + this.queue.length)
             this.debug(this.player.state.status)
             if(this.player.state.status === AudioPlayerStatus.Paused) {
+                this.debug("trying to unpause")
                 this.player.unpause();
             } else {
-                this.player.play(this.queue.currentSong.resource);
+                this.debug("trying to play")
+                try {
+                    this.player.play(this.queue.currentSong.resource);
+                } catch(err) {
+                    this.error(err);
+                    this.isPlaying = false;
+                    if(this.connection) {
+                        this.play()
+                    }
+                }
             }
             
             return this.queue.currentSong;
