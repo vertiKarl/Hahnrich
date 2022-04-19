@@ -6,15 +6,29 @@ import QuizUser from "./QuizUser";
 export default class Round {
     answers = new Map<QuizUser, Answer>();
 
+    /**
+     * Creates a  round for the quiz. It can check the
+     * answers and calculate points according to how
+     * close the user answered to the solution.
+     * @param index A number to specify which round it is
+     * @param solution The solution to the round
+     */
     constructor(public index: number, public solution: Song) {}
 
     get Number() {
         return this.index;
     }
 
-    checkAnswers(): Map<QuizUser, Answer> {
+    /**
+     * The behavior for rewarding points.
+     * Checks the answers of the round and rewards
+     * points to the users accordingly.
+     * It also sets the isCorrect property on the users to their
+     * respective value.
+     */
+    checkAnswers() {
         this.answers.forEach(async (answer, user) => {
-            const name = (await this.solution.name).toLocaleLowerCase()
+            const name = (await this.solution.name).toLowerCase();
             const points = this.compare(name, answer.text);
             if(points >= 0) {
                 answer.isCorrect = true;
@@ -27,48 +41,71 @@ export default class Round {
             }
             
         })
-
-        return this.answers;
     }
 
     /**
      * Calculates amount of points that the player gets for his guess
-     * @param s Solution string to compare target to
-     * @param t Target string
+     * @param solution Solution string to compare target to
+     * @param answer Target string
      * @returns Amount of points
      */
-    compare(s: string, t: string): number {
-        const sArr = [...new Set(LocalSongs.cleanString(s).toLowerCase().split(" "))];
-        const tArr = [...new Set(LocalSongs.cleanString(t).toLowerCase().split(" "))];
+    compare(solution: string, answer: string): number {
+        // splits the cleaned strings into arrays to make a crosscheck
+        // ex:
+        // - og: "[Lyrics] Persona 5 - Life Will Change.mp3"
+        // - cleanup: "Lyrics Persona 5 Life Will Change"
+        // - array: ["Lyrics", "Persona", "5", "Life", "Wil", "Change"]
+        // we also cast the string array to a set to remove duplicate entries
+        const solutionArray = [...new Set(LocalSongs.cleanString(solution).toLowerCase().split(" "))];
+        const answerArray = [...new Set(LocalSongs.cleanString(answer).toLowerCase().split(" "))];
         
         let points = 0;
         let blocksWrong = 0;
 
-        for(const tBlock of tArr) {
+        // for each block in the solution string
+        for(const answerBlock of answerArray) {
             let wasRight = false;
-            for(const sBlock of sArr) {
-                if(Round.levenshtein(sBlock, tBlock) < sBlock.length / 2) {
-                    if(!wasRight) {
-                        points++;
-                        wasRight = true;
-                    }
+
+            // check each block in the answer string
+            for(const solutionBlock of solutionArray) {
+                // To avoid duplicate awarding of points
+                // break if answerBlock was right already
+                if(wasRight) break;
+
+                // if answer is less than half of the length 
+                // of the solutionBlock away from being right
+                if(Round.levenshtein(solutionBlock, answerBlock) < solutionBlock.length / 2) {
+                    // add a  point for each answerBlock that matches one or more solutionBlocks
+                    points++;
+
+                    // set wasRight to true to make sure it only matches one block
+                    // and also count how many answerBlocks were wrong
+                    wasRight = true;
                 }
             }
             if(!wasRight) blocksWrong++;
-                
         }
 
+        // Subtract the amount of wrong blocks from points
+        // when there were more than two blocks wrong
         if(blocksWrong > 2) points -= blocksWrong;
 
         return points
     }
     
-    /* https://stackoverflow.com/questions/18516942/fastest-general-purpose-levenshtein-javascript-implementation */
-    static levenshtein(s: string, t: string) {
-        if (s === t) {
+    /**
+     * Compares two strings with each other to check how many edits it would need
+     * to get to the other string.
+     * minimal edit from source: https://stackoverflow.com/questions/18516942/fastest-general-purpose-levenshtein-javascript-implementation
+     * @param solution 
+     * @param answer 
+     * @returns 
+     */
+    static levenshtein(solution: string, answer: string) {
+        if (solution === answer) {
             return 0;
         }
-        var n = s.length, m = t.length;
+        var n = solution.length, m = answer.length;
         if (n === 0 || m === 0) {
             return n + m;
         }
@@ -79,17 +116,17 @@ export default class Round {
         }
     
         for (; (x + 3) < m; x += 4) {
-            var e1 = t.charCodeAt(x);
-            var e2 = t.charCodeAt(x + 1);
-            var e3 = t.charCodeAt(x + 2);
-            var e4 = t.charCodeAt(x + 3);
+            var e1 = answer.charCodeAt(x);
+            var e2 = answer.charCodeAt(x + 1);
+            var e3 = answer.charCodeAt(x + 2);
+            var e4 = answer.charCodeAt(x + 3);
             c = x;
             b = x + 1;
             d = x + 2;
             g = x + 3;
             h = x + 4;
             for (y = 0; y < n; y++) {
-                k = s.charCodeAt(y);
+                k = solution.charCodeAt(y);
                 a = p[y];
                 if (a < c || b < c) {
                     c = (a > b ? b + 1 : a + 1);
@@ -135,7 +172,7 @@ export default class Round {
         }
     
         for (; x < m;) {
-            var e = t.charCodeAt(x);
+            var e = answer.charCodeAt(x);
             c = x;
             d = ++x;
             for (y = 0; y < n; y++) {
@@ -144,7 +181,7 @@ export default class Round {
                     d = (a > d ? d + 1 : a + 1);
                 }
                 else {
-                    if (e !== s.charCodeAt(y)) {
+                    if (e !== solution.charCodeAt(y)) {
                         d = c + 1;
                     }
                     else {

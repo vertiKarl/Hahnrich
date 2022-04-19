@@ -1,10 +1,16 @@
 import fs from "fs";
 import Logger from "../../../Logger";
 
-export default class LocalSongs extends Logger {
-
-    emoji = "📁"
-
+/**
+ * A class to handle interaction with the local filesystem
+ */
+export default class LocalSongs {
+    /**
+     * Fetches an array of randomly picked songs in the Songs folder
+     * in the root directory of the project
+     * @param amount The amount of songs to return
+     * @returns An array songs with a length of the specified amount
+     */
     static randomSongs(amount: number): Array<string> {
         const songs: Array<string> = []
         const allSongs = this.getSongs();
@@ -20,18 +26,24 @@ export default class LocalSongs extends Logger {
         return songs;
     }
 
+    /**
+     * Converts it into utf-8, removes file extension,
+     * replaces separator characters with spaces and
+     * removes unnecessary whitespace
+     * @param str The string to clean up
+     * @returns 
+     */
     static cleanString(str: string) {
+        // converts it into utf8 represantion
+        str = Buffer.from(str, 'utf-8').toString();
+
         // remove file extension from string
         const extension = /.{3}$/g;
         str = str.replaceAll(extension, "");
 
-        // replace all characters that might get used as seperators
-        const seperators = /([\_\-,.;:><\\\/\[\]\{\}\%\$\§\"\'\`\´\+\-\*])/g;
-        str = str.replaceAll(seperators, " ");
-
-        // remove all non printable characters
-        const mainPass = /([^\w0-9 _-])/g;
-        str = str.replaceAll(mainPass, "");
+        // replace all characters that might get used as separators
+        const separators = /([\_\-,.;:><\\\/\[\]\{\}\%\$\§\"\'\`\´\+\-\*])/g;
+        str = str.replaceAll(separators, " ");
 
         // remove duplicate whitespace characters
         str = str.replaceAll(/\s+/g, " ");
@@ -39,6 +51,11 @@ export default class LocalSongs extends Logger {
         return str;
     }
 
+
+    /**
+     * Fetches all locally stored song-files
+     * @returns An array of strings
+     */
     static getSongs(): Array<string> {
         return fs.readdirSync(__dirname + "/../../../../../Songs/", {
             encoding: "utf-8"

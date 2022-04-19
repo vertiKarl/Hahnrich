@@ -25,6 +25,15 @@ export default class Quiz extends Logger {
 
     activeTimeouts: NodeJS.Timeout[] = [];
 
+    /**
+     * The SongQuiz object for controlling behavior.
+     * If there was no mediaplayer object provided it creates one from the given
+     * interaction. If there was an active mediaplayer though, it saves the active
+     * queue to memory to restore it after the quiz is over.
+     * @param client A client object for interacting with different discord guilds
+     * @param interaction The interaction which triggered this mediaplayer
+     * @param mediaplayer [Optional] The mediaplayer to use for the quiz (if none was given, it creates one from the interaction parameter)
+     */
     constructor(public client: ExtendedClient, public interaction: CommandInteraction, public mediaplayer?: MediaPlayer) {
         super();
         if(!this.mediaplayer) this.mediaplayer = this.getMediaplayer();
@@ -39,6 +48,10 @@ export default class Quiz extends Logger {
         return this.rounds.get(this.round);
     }
 
+    /**
+     * Starts a round and increases the round counter by one
+     * @returns The started Round-object
+     */
     startRound(): Round {
         if(!this.mediaplayer) throw new Error("Mediaplayer not defined!");
         this.round++;
@@ -51,6 +64,11 @@ export default class Quiz extends Logger {
         return round;
     }
 
+    /**
+     * Starts the voting phase of the quiz and sets timeouts
+     * to call the following functions automatically after
+     * specified time.
+     */
     async startVotes() {
         await this.interaction.editReply({embeds: [this.getVotingEmbed()]});
 
@@ -68,6 +86,17 @@ export default class Quiz extends Logger {
         }, this.VOTETIME);
     }
 
+    /**
+     * Ends the voting phase, checks the answers, awards points,
+     * sets the current ranks accordingly and shows the current
+     * Scoreboard. Also sets a timeout after which it decides
+     * what to do next.
+     * 
+     * If this.stopped got set it simply exits. Otherwise it
+     * checks if the number of MAXROUNDS got exceeded at
+     * which Discord won't let you change the embed anymore.
+     * So we need to exit there as well.
+     */
     endVotes() {
         if(!this.currentRound) throw new Error("No round active")
         this.acceptingVotes = false;
@@ -90,6 +119,10 @@ export default class Quiz extends Logger {
         }, this.PAUSETIME);
     }
 
+    /**
+     * Sorts the participating users by points and sets
+     * the resulting order in their respective objects
+     */
     setPlaces() {
         let users: QuizUser[] = []
         this.participants.forEach((user: QuizUser, id: string) => {
@@ -105,6 +138,11 @@ export default class Quiz extends Logger {
         }
     }
 
+    /**
+     * Generates an embed from the participants
+     * of the active round
+     * @returns The resulting Discord-Embed
+     */
     getVotingEmbed(): MessageEmbed {
         if(!this.currentRound) throw new Error("No round active")
         const embed = new MessageEmbed();
@@ -135,6 +173,22 @@ export default class Quiz extends Logger {
         return embed;
     }
 
+    /**
+     * When an answer gets retrieved this function gets
+     * triggered.
+     * If the voting phase is currently active it sets
+     * the answer by given user in the answers map of
+     * the current round.
+     * If the user wasn't previously added to the game,
+     * they get added at this point.
+     * Then it replies with the current voting-embed.
+     * It also replies to the sent command with the
+     * registered answer, so the user can check if
+     * they had a typo in their answer.
+     * @param interaction The message from the user we can use to tell them what they answered
+     * @param user The user who answered
+     * @param answer The answer object containing their answer
+     */
     registerAnswer(interaction: CommandInteraction, user: User, answer: Answer) {
         if(!this.currentRound) throw new Error("No round active")
         if(!this.acceptingVotes) {
@@ -154,39 +208,47 @@ export default class Quiz extends Logger {
         const message = interaction.reply({ content: 'Answer: ' + answer.text + " registered.", ephemeral: true })
     }
 
+    /**
+     * Replies to this.interaction with the results of
+     * a specified round
+     * @param round The round to get the results of
+     */
     async showResults(round: Round) {
-        // TODO: REFACTOR *alot*
-          const embed = new MessageEmbed();
-          embed
-            .setColor("#02f3f3")
-            .setTitle(`Solution:`)
-            .setDescription(await round.solution.name)
-            .setAuthor({
-              name: "Song-Quiz Round " + round.index
-            });
+        // TODO: REFACTOR *a lot*
+        const embed = new MessageEmbed();
+        embed
+        .setColor("#02f3f3")
+        .setTitle(`Solution:`)
+        .setDescription(await round.solution.name)
+        .setAuthor({
+            name: "Song-Quiz Round " + round.index
+        });
 
-            let users: {user: QuizUser, answer: Answer}[] = []
-            round.answers.forEach((answer: Answer, user: QuizUser) => {
-                users.push({user, answer});
-            })
+        let users: {user: QuizUser, answer: Answer}[] = []
+        round.answers.forEach((answer: Answer, user: QuizUser) => {
+            users.push({user, answer});
+        })
+
+        users = users.sort((a, b) => {
+            return b.user.score - a.user.score;
+        })
+
     
-            users = users.sort((a, b) => {
-                return b.user.score - a.user.score;
-            })
-
-        
-            users.forEach(({answer, user}: {answer: Answer, user: QuizUser}) => {
-                this.debug("Adding", user.discord.tag, "to results page")
-                embed.addField(
-                    `${user.place}${user.suffix} ${user.discord.tag}`,
-                    `${answer.text} ${answer.emoji} (${user.score}) ${user.increase}`);
-            })
+        users.forEach(({answer, user}: {answer: Answer, user: QuizUser}) => {
+            this.debug("Adding", user.discord.tag, "to results page")
+            embed.addField(
+                `${user.place}${user.suffix} ${user.discord.tag}`,
+                `${answer.text} ${answer.emoji} (${user.score}) ${user.increase}`);
+        })
 
         this.interaction.editReply({embeds: [embed]});
     }
 
+    /**
+     * Shows the final results and (not yet) displays the winner of the round!
+     */
     async showFinalResults() {
-        // TODO: REFACTOR *alot*
+        // TODO: REFACTOR *a lot*
           const embed = new MessageEmbed();
           embed
             .setColor("#02f3f3")
@@ -214,13 +276,18 @@ export default class Quiz extends Logger {
         this.interaction.editReply({embeds: [embed]});
     }
 
+    /**
+     * Stops the quiz after the current round is over.
+     * Hint: The mediaplayer gets potentially replaced with
+     * the original mediaplayer before the round is over.
+     */
     async stop() {
         if(!this.currentRound) throw new Error("No round active")
         // Show final results
         await this.showFinalResults();
 
-        // rebuilding original mediaplayer
         this.stopped = true;
+        // rebuilding original mediaplayer
         if(this.mediaplayer) {
             // replace queue with original
             this.debug("Replacing queue with original")
@@ -233,10 +300,20 @@ export default class Quiz extends Logger {
         }
     }
 
+    /**
+     * Creates a new mediaplayer from the scoped information.
+     * (this.client and this.interaction)
+     * @returns A new mediaplayer-object
+     */
     getMediaplayer(): MediaPlayer {
         return new MediaPlayer(this.client, this.interaction);
     }
 
+    /**
+     * Fetches a random song from the Songs directory at the root
+     * of the project.
+     * @returns A randomly selected song
+     */
     generateSong(): Song {
         return new Song(SongType.FILE, LocalSongs.randomSongs(1)[0]);
     }

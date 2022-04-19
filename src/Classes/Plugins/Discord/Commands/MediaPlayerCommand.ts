@@ -22,6 +22,9 @@ import LocalSongs from "../MediaPlayer/LocalSongs";
 import { ytKey } from "../config.json";
 import EventEmitter from "events";
 
+/**
+ * A command which interacts with MediaPlayer, to play audio in a Discord-VoiceChannel
+ */
 export default class MediaPlayerCommand extends Command {
   data = new SlashCommandBuilder();
 
@@ -87,10 +90,14 @@ export default class MediaPlayerCommand extends Command {
       );
   }
 
+  /**
+   * @param client The client of the DiscordPlugin
+   * @param interaction The interaction which triggered this command
+   * @returns true on success and false on error
+   */
   async execute(
     client: ExtendedClient,
-    interaction: CommandInteraction,
-    events: EventEmitter
+    interaction: CommandInteraction
   ): Promise<boolean> {
     const func = interaction.options.getSubcommand();
     
@@ -406,6 +413,13 @@ export default class MediaPlayerCommand extends Command {
     return true;
   }
 
+  /**
+   * Edits the reply to the given interaction with an embed of
+   * the given song
+   * @param interaction The interaction that triggered this command
+   * @param song The song to display
+   * @param next [Optional] The upcoming song
+   */
   async showSong(interaction: CommandInteraction | SelectMenuInteraction, song: Song, next?: Song | null) {
     const embed = new MessageEmbed();
 
@@ -451,9 +465,5 @@ export default class MediaPlayerCommand extends Command {
  */
   isJoinCommand(func: string): boolean {
     return ["add", "random"].includes(func);
-  }
-
-  async stop(): Promise<boolean> {
-    return true;
   }
 }

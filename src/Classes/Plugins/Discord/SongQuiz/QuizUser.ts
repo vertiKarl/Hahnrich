@@ -6,6 +6,12 @@ export default class QuizUser {
     score = 0;
     lastIncrease = 0;
 
+    /**
+     * Creates a QuizUser object which holds the information
+     * about current ranking, score and the last increase in
+     * points.
+     * @param discord The user object provided by discord.js
+     */
     constructor(public discord: User) {}
 
     get increase(): string {
@@ -13,7 +19,7 @@ export default class QuizUser {
     }
     
     get suffix() {
-        if(this.place = -1) return "";
+        if(this.place < 1) return "";
         
         switch(this.place % 10) {
             case 1: {

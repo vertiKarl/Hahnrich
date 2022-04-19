@@ -1,6 +1,5 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
 import ytdl, { Author } from "ytdl-core";
-import { join } from "path";
 import Logger from "../../../Logger";
 import LocalSongs from "./LocalSongs";
 
@@ -14,7 +13,7 @@ export default class Song extends Logger {
     constructor(readonly type: SongType, readonly source: string) {
         super()
     }
-
+    
     get resource(): AudioResource {
         switch(this.type) {
             case SongType.FILE:
@@ -97,6 +96,11 @@ export default class Song extends Logger {
         }
     }
 
+    /**
+     * Parses a given string to either be of type YouTube, Embed or File
+     * @param source String to parse
+     * @returns The SongType of a given source
+     */
     static parseType(source: String): SongType {
         if(
             source.startsWith("https://youtube.com/watch") ||

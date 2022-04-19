@@ -6,6 +6,9 @@ import modules from "./Modules";
 import Logger from "./Logger";
 import {version} from "../version";
 
+/**
+ * The top class that gets used to manage Plugins and Modules
+ */
 export default class Hahnrich extends Logger {
     plugins: Map<String, Plugin> = new Map<String, Plugin>();
     private modules: Map<String, Module> = new Map<String, Module>();
@@ -19,6 +22,11 @@ export default class Hahnrich extends Logger {
         this.init();
     }
 
+    /**
+     * Adds a plugin instance to the plugins map to keep
+     * it in memory and allow runtime manipulation.
+     * @param plugin A plugin instance to import to plugins map
+     */
     async loadPlugin(plugin: Plugin): Promise<void> {
         this.debug("Plugin '"+plugin.name+"' starting!")
         this.plugins.set(plugin.name, plugin);
@@ -30,24 +38,34 @@ export default class Hahnrich extends Logger {
         })
     }
 
+    /**
+     * Removes Plugin-instance from plugins map which in turn
+     * lets it get catched by garbage collection.
+     * @param plugin The plugin instance to detach from plugins map
+     */
     unloadPlugin(plugin: Plugin): void {
         if(this.plugins.has(plugin.name)) {
-            const success = plugin.stop();
             this.plugins.delete(plugin.name);
-            if(!success) {
-                this.warn("Plugin " + plugin.name + " failed to stop!")
-            } else {
-                this.log("Plugin "+plugin.name+" unloaded!")
-            }
+            this.log("Plugin "+plugin.name+" unloaded!")
         }
     }
 
+    /**
+     * Adds a module instance to the modules map to keep
+     * it in memory and allow runtime manipulation.
+     * @param module A module instance to import to plugins map
+     */
     async loadModule(module: Module): Promise<void> {
             this.debug("Module '"+module.name+"' starting!")
             const success = module.execute();
             if(!success) this.warn("Module " + module.name + " failed to start!")
     }
 
+    /**
+     * Removes Module-instance from plugins modules which in turn
+     * lets it get catched by garbage collection.
+     * @param module The modules instance to detach from modules map
+     */
     unloadModule(module: Module): void {
         if(this.modules.has(module.name)) {
             module.stop();
@@ -56,6 +74,10 @@ export default class Hahnrich extends Logger {
         }
     }
 
+    /**
+     * Initializes Hahnrich-instance and loads all enabled Plugins and Modules
+     * 
+     */
     init(): void {
         // Show logo
         const logo = fs.readFileSync(__dirname + "/../../logo.txt", {encoding: "utf-8"})
@@ -67,9 +89,12 @@ export default class Hahnrich extends Logger {
             this.loadPlugin(instance);
         })
 
+        // reference Hahnrich in the module parent class
+        Module.controller = this;
+
         // Load Modules
         modules.forEach(module => {
-            const instance = new (module);
+            const instance = new (module)();
             this.loadModule(instance);
         })
     }

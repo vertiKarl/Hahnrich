@@ -9,6 +9,9 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import ExtendedClient from "./Discord/ExtendedClient";
 import EventEmitter from "events";
 
+/**
+ * A plugin for interaction on the realtime chat application Discord!
+ */
 export default class DiscordPlugin extends Plugin {
     name = "Discord";
     description = "A Discord-bot for Hahnrich";
@@ -16,6 +19,10 @@ export default class DiscordPlugin extends Plugin {
 
     commands = new Map<string, Command>()
 
+    /**
+     * Loads all commands specified in ./Discord/Commands.ts
+     * @returns A list of all enabled commands
+     */
     loadCommands(): Array<Command> {
         const commands: Array<Command> = []
         Commands.forEach(command => {
@@ -25,6 +32,11 @@ export default class DiscordPlugin extends Plugin {
         return commands;
     }
 
+    /**
+     * Initializes the instance by requesting to put the application commands
+     * into the discord api
+     * @returns Success-state
+     */
     async init(): Promise<boolean> {
         return new Promise((resolve, reject) => {
             const rest = new REST().setToken(token);
@@ -50,9 +62,12 @@ export default class DiscordPlugin extends Plugin {
         })
     }
 
+    /**
+     * Starts the Discord-client and starts the interactionHandler
+     * @returns Success-state
+     */
     async execute(): Promise<boolean> {
         if(!await this.init()) {
-            this.stop();
             return false
         };
 
@@ -82,11 +97,13 @@ export default class DiscordPlugin extends Plugin {
         return true;
     }
 
-    async stop(): Promise<boolean> {
-        this.warn("Stopping Discord plugin!")
-        return true;
-    }
-
+    /**
+     * Handles the behavior when receiving interactions from discord
+     * @param client The discord client
+     * @param interaction The interaction itself
+     * @param events The eventemitter which connects the plugins
+     * @returns The success-state of the processing
+     */
     async interactionHandler(client: ExtendedClient, interaction: Interaction, events: EventEmitter): Promise<void> {
         if(!interaction.isCommand()) return;
 
@@ -96,7 +113,7 @@ export default class DiscordPlugin extends Plugin {
             if(!interaction.member?.permissions || typeof interaction.member?.permissions === "string") return;
 
             if(!interaction.member?.permissions?.has(command.permissions)) {
-                return await interaction.reply("Unsufficient permissions!")
+                return await interaction.reply("Insufficient permissions!")
             }
         }
 
@@ -108,7 +125,6 @@ export default class DiscordPlugin extends Plugin {
         } catch(err) {
             console.error("Unhandled error in DiscordPlugin:", err)
             interaction.reply("Failed executing command!")
-            command.stop();
         }
 
         

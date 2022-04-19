@@ -2,6 +2,13 @@ import fs from "fs";
 
 import {version} from "../version";
 
+/**
+ * An abstract class to let most classes
+ * inherit from. It enables objects to
+ * log to console with specified formatting.
+ * All logged errors get saved to the log file
+ * as well.
+ */
 export default abstract class Logger {
     
     static HahnrichVersion: string;
@@ -58,10 +65,18 @@ export default abstract class Logger {
         this.log2file(text);
     }
 
+    /**
+     * It iterates over the input array and replaces objects
+     * with their JSON.stringified counterpart to log them
+     * accordingly.
+     * @param content An array of objects, strings and the like
+     * @returns A manipulated version of the input array
+     */
     private parseObjects(content: any[]): any[] {
         // make objects visible
         for(const i in content) {
             if(typeof content[i] == "object") {
+                // if the object is an error object
                 if(
                     Object.getOwnPropertyNames(content[i]).includes("stack") &&
                     Object.getOwnPropertyNames(content[i]).includes("message")

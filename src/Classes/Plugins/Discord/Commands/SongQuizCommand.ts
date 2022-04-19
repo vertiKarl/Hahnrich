@@ -6,6 +6,9 @@ import ExtendedClient from "../ExtendedClient";
 import Answer from "../SongQuiz/Answer";
 import Quiz from "../SongQuiz/Quiz";
 
+/**
+ * A command, to host a SongQuiz in a Discord-VoiceChannel
+ */
 export default class SongQuizCommand extends Command {
     data = new SlashCommandBuilder();
     permissions = [];
@@ -36,7 +39,12 @@ export default class SongQuizCommand extends Command {
         )
     }
 
-    async execute(client: ExtendedClient, interaction: CommandInteraction, events: EventEmitter): Promise<boolean> {
+  /**
+   * @param client The client of the DiscordPlugin
+   * @param interaction The interaction which triggered this command
+   * @returns true on success and false on error
+   */
+    async execute(client: ExtendedClient, interaction: CommandInteraction): Promise<boolean> {
         const func = interaction.options.getSubcommand();
         let answer = interaction.options.getString("answer");
         
@@ -46,6 +54,11 @@ export default class SongQuizCommand extends Command {
             throw new Error("Member is not an instance of GuildMember!");
     
         const channel = member.voice.channel;
+
+        if(!channel) {
+            interaction.reply("You are not in a VoiceChannel!");
+            return false;
+        }
     
         let mediaplayer = client.mediaplayers.get(member.guild.id);
         let songquiz = client.songquizes.get(member.guild.id);

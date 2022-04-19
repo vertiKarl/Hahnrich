@@ -15,6 +15,11 @@ export default class MediaPlayer extends Logger {
     channel: VoiceChannel;
     readonly maxIdleTime: number = 5 * 60 * 1000 //  5 Minutes
 
+    /**
+     * A mediaplayer for controlling audio-playback in discord
+     * @param client A client object for interacting with different discord guilds
+     * @param interaction The interaction which triggered this mediaplayer
+     */
     constructor(private client: ExtendedClient, public interaction: CommandInteraction) {
         super()
 
@@ -111,6 +116,12 @@ export default class MediaPlayer extends Logger {
         })
     }
 
+    /**
+     * Adds a given song to a specified position in this.queue
+     * @param source Either a string to parse or a given song to add to this.queue
+     * @param position The position to which the given song gets added in this.queue
+     * @returns Either the parsed song or the input song
+     */
     add(source: string | Song, position: SongPosition): Song {
         let song: Song;
 
@@ -128,6 +139,13 @@ export default class MediaPlayer extends Logger {
         return song;
     }
 
+    /**
+     * Removes a given range of songs from this.queue and automatically plays the new current first song in this.queue
+     * if it changed
+     * @param index Starting index to remove songs from
+     * @param amount Amount of songs to remove
+     * @returns The now playing song or null if there is either nothing to play or the first element didn't get removed
+     */
     removeAt(index: number, amount: number): Song | null {
         this.debug("Trying to remove", amount, "songs at", index);
         if(index >= 0 && index < this.queue.length && index + amount <= this.queue.length && amount > 0) {
@@ -138,6 +156,12 @@ export default class MediaPlayer extends Logger {
         return null;
     }
 
+
+    /**
+     * Plays the this.queue.currentSong resource on this.connection
+     * @param force [Optional] Ignores checks for already playing
+     * @returns The playing song or null if there is nothing to play
+     */
     play(force = false): Song | null {
         this.debug("isPlaying:", this.isPlaying);
         if(!force && this.isPlaying) {
@@ -188,6 +212,10 @@ export default class MediaPlayer extends Logger {
         return null;
     }
 
+    /**
+     * Destroys the mediaplayer and removes it from the client map and
+     * prepares it to get taken by garbage collection
+     */
     stop(): void {
         this.connection.destroy();
         this.client.mediaplayers.delete(this.channel.guild.id);
