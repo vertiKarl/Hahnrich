@@ -197,10 +197,10 @@ export default class Quiz extends Logger {
      * @param user The user who answered
      * @param answer The answer object containing their answer
      */
-    registerAnswer(interaction: CommandInteraction, user: User, answer: Answer) {
+    async registerAnswer(interaction: CommandInteraction, user: User, answer: Answer) {
         if(!this.currentRound) throw new Error("No round active")
         if(!this.acceptingVotes) {
-            interaction.reply({ content: 'Sorry but votes are already closed!', ephemeral: true});
+            await interaction.reply({ content: 'Sorry but votes are already closed!', ephemeral: true});
             return;
         }
         let qUser = this.participants.get(user.id);
@@ -212,8 +212,8 @@ export default class Quiz extends Logger {
             this.currentRound.answers.set(qUser, answer);
         }
 
-        this.interaction.editReply({embeds: [this.getVotingEmbed()]});
-        const message = interaction.reply({ content: 'Answer: ' + answer.text + " registered.", ephemeral: true })
+        await this.interaction.editReply({embeds: [this.getVotingEmbed()]});
+        const message = await interaction.reply({ content: 'Answer: ' + answer.text + " registered.", ephemeral: true })
     }
 
     /**
@@ -249,7 +249,7 @@ export default class Quiz extends Logger {
                 `${answer.text} ${answer.emoji} (${user.score}) ${user.increase}`);
         })
 
-        this.interaction.editReply({embeds: [embed]});
+        await this.interaction.editReply({embeds: [embed]});
     }
 
     /**
@@ -281,7 +281,7 @@ export default class Quiz extends Logger {
                     `(${user.score}) ${user.increase}`);
             })
 
-        this.interaction.editReply({embeds: [embed]});
+        await this.interaction.editReply({embeds: [embed]});
     }
 
     /**

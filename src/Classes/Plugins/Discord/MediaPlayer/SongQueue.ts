@@ -71,6 +71,7 @@ export default class SongQueue extends EventEmitter {
                 this.emit("push");
                 break;
             case SongPosition.END:
+                console.debug("PUSHTOEND  EVENT",  song)
                 this.queue.push(song);
                 this.emit("push");
         }

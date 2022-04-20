@@ -264,7 +264,7 @@ export default class MediaPlayerCommand extends Command {
                     mediaplayer = this.createMediaplayer(client, member, interaction)
                   }
                   const message = await selectInteraction.reply("adding");
-                  selectInteraction.deleteReply();
+                  await selectInteraction.deleteReply();
 
                   let song;
                   switch(selectInteraction.customId) {
@@ -304,7 +304,7 @@ export default class MediaPlayerCommand extends Command {
         }
         case "skip": {
           if(!mediaplayer) {
-            interaction.reply("No mediaplayer active!");
+            await interaction.reply("No mediaplayer active!");
             return false;
           }
           await interaction.deferReply();
@@ -322,10 +322,10 @@ export default class MediaPlayerCommand extends Command {
           if(!amount) {
             amount = 1;
           } else if(!amount || amount <= 0) {
-            interaction.editReply("Negative or zero amount not possible!")
+            await interaction.editReply("Negative or zero amount not possible!")
             return false;
           } else if(position + amount > mediaplayer.queue.length) {
-            interaction.editReply("Skipping more songs than in queue not possible!\nTo clear queue use /mp clear!")
+            await interaction.editReply("Skipping more songs than in queue not possible!\nTo clear queue use /mp clear!")
             return false;
           }
 
@@ -337,7 +337,7 @@ export default class MediaPlayerCommand extends Command {
           
 
           if(!song) {
-            interaction.editReply("Skipping not possible, did you specify a negative amount?")
+            await interaction.editReply("Skipping not possible, did you specify a negative amount?")
             return false;
           }
 
@@ -346,14 +346,14 @@ export default class MediaPlayerCommand extends Command {
 
             this.showSong(interaction, song, SongPosition.NOW, nextSong);
           } else {
-            interaction.editReply("Skipped " + amount + " songs!");
+            await interaction.editReply("Skipped " + amount + " songs!");
           }
           
           return true;
         }
         case "queue": {
           if(!mediaplayer) {
-            interaction.reply("No mediaplayer active!");
+            await interaction.reply("No mediaplayer active!");
             return false;
           }
           const songs = mediaplayer.queue.queue
@@ -393,6 +393,11 @@ export default class MediaPlayerCommand extends Command {
         case "random": {
           const amount = interaction.options.getNumber("amount") || 1;
 
+          if(amount < 1) {
+            await interaction.reply("Invalid amount!");
+            return false;
+          } 
+
           if(!mediaplayer) {
             mediaplayer = this.createMediaplayer(client, member, interaction)
           }
@@ -409,7 +414,7 @@ export default class MediaPlayerCommand extends Command {
         }
         case "current": {
           if(!mediaplayer) {
-            interaction.reply("No mediaplayer active!");
+            await interaction.reply("No mediaplayer active!");
             return false;
           }
           await interaction.deferReply();
@@ -420,34 +425,34 @@ export default class MediaPlayerCommand extends Command {
 
             this.showSong(interaction, song, SongPosition.NOW, nextSong);
           } else {
-            interaction.editReply("Nothing to see here")
+            await interaction.editReply("Nothing to see here")
           }
           return true;
         }
         case "clear": {
           await interaction.deferReply();
           if(!mediaplayer) {
-            interaction.editReply("No mediaplayer active!")
+            await interaction.editReply("No mediaplayer active!")
             return false;
           }
           const temp = mediaplayer.removeAt(0, mediaplayer.queue.length);
           if(temp instanceof Song) {
-            interaction.editReply("Couldn't delete everything!")
+            await interaction.editReply("Couldn't delete everything!")
             return false;
           } else {
-            interaction.editReply("Queue cleared!")
+            await interaction.editReply("Queue cleared!")
             return true;
           }
         }
         case "del": {
           await interaction.deferReply({ ephemeral: true });
           if(!mediaplayer) {
-            interaction.editReply("No mediaplayer active!")
+            await interaction.editReply("No mediaplayer active!")
             return false;
           }
 
           if(!member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
-            interaction.editReply("Insufficient permission!");
+            await interaction.editReply("Insufficient permission!");
             return false;
           }
           const target = mediaplayer.queue.currentSong;
@@ -505,10 +510,10 @@ export default class MediaPlayerCommand extends Command {
         }
         case "debug": {
           if(!mediaplayer) {
-            interaction.reply("No mediaplayer active");
+            await interaction.reply("No mediaplayer active");
             return false;
           } else {
-            interaction.reply("Trying to get unstuck.")
+            await interaction.reply("Trying to get unstuck.")
             mediaplayer.play(true);
             return true;
           }
@@ -578,7 +583,7 @@ export default class MediaPlayerCommand extends Command {
       });
     }
 
-    interaction.editReply({ embeds: [ embed ], components: [] })
+    await interaction.editReply({ embeds: [ embed ], components: [] })
   }
 
  /**

@@ -131,14 +131,14 @@ export default class DiscordPlugin extends Plugin {
         try {
             const result = await command.execute(client, interaction, events);
             if(!result && !(interaction.replied  || interaction.deferred)) {
-                interaction.reply("Sorry, something went wrong!");
+                await interaction.reply("Sorry, something went wrong!");
             }
         } catch(err) {
             console.error("Unhandled error in DiscordPlugin:", err)
             if(!(interaction.replied  || interaction.deferred)) {
-                interaction.reply("Failed executing command!")
+                await interaction.reply("Failed executing command!")
             } else {
-                interaction.editReply("Failed executing command!");
+                await interaction.editReply("Failed executing command!");
             }
         }
 

@@ -132,7 +132,7 @@ export default class MediaPlayer extends Logger {
         }
 
         (async () => {
-            this.debug(`Adding ${await song.name} at:\n${position}\nType: ${song.type}`)
+            this.debug(`Adding ${await song.name} at:\n${position}\nType: ${song.type}\nFrom: ${song.source}`)
         })()
 
         this.queue.pushToPosition(song, position)

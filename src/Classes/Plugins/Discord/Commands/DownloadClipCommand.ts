@@ -39,30 +39,30 @@ export default class DownloadClipCommand extends Command {
         await interaction.deferReply();
         const url = interaction.options.getString("url");
         if(!url) {
-            interaction.editReply("No url specified!")
+            await interaction.editReply("No url specified!")
             return false;
         }
         
         events.emit("DownloadRequest", url);
 
-        events.on("DownloadInvalidURL", () => {
-            interaction.editReply("Invalid url provided!");
+        events.on("DownloadInvalidURL", async () => {
+            await interaction.editReply("Invalid url provided!");
         })
 
-        events.on("DownloadError", () => {
-            interaction.editReply("Error when trying to download clip!")
+        events.on("DownloadError", async () => {
+            await interaction.editReply("Error when trying to download clip!")
         })
 
-        events.on("DownloadProgress", (title: string, progress: number) => {
-            interaction.editReply(`[${progress}%] Downloading ${title}`)
+        events.on("DownloadProgress", async (title: string, progress: number) => {
+            await interaction.editReply(`[${progress}%] Downloading ${title}`)
         })
 
-        events.on("DownloadAlreadyThere", (title: string, id: number) => {
-            interaction.editReply(`Clip ${title} already downloaded!\nYou can find it here: ${this.urlPrefix}${id}`);
+        events.on("DownloadAlreadyThere", async (title: string, id: number) => {
+            await interaction.editReply(`Clip ${title} already downloaded!\nYou can find it here: ${this.urlPrefix}${id}`);
         })
 
-        events.on("DownloadFinished", (title: string, id: number) => {
-            interaction.editReply(`Finished downloading ${title}, you can find it here: ${this.urlPrefix}${id}`)
+        events.on("DownloadFinished", async (title: string, id: number) => {
+            await interaction.editReply(`Finished downloading ${title}, you can find it here: ${this.urlPrefix}${id}`)
         })
         return true;
     }

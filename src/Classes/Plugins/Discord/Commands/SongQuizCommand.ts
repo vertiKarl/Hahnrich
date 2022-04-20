@@ -56,7 +56,7 @@ export default class SongQuizCommand extends Command {
         const channel = member.voice.channel;
 
         if(!channel) {
-            interaction.reply("You are not in a VoiceChannel!");
+            await interaction.reply("You are not in a VoiceChannel!");
             return false;
         }
     
@@ -78,10 +78,10 @@ export default class SongQuizCommand extends Command {
                 }
                 case "submit": {
                     if(!songquiz) {
-                        interaction.reply("No songquiz active!")
+                        await interaction.reply("No songquiz active!")
                     } else {
                         if(!answer) {
-                            interaction.reply("No answer given!")
+                            await interaction.reply("No answer given!")
                             return false;
                         } else {
                             songquiz.registerAnswer(interaction, member.user, new Answer(answer));
@@ -92,9 +92,9 @@ export default class SongQuizCommand extends Command {
                 }
                 case "stop": {
                     if(!songquiz) {
-                        interaction.reply("No songquiz active!")
+                        await interaction.reply("No songquiz active!")
                     } else {
-                        interaction.reply("Stopping quiz and returning to previous queue!")
+                        await interaction.reply("Stopping quiz and returning to previous queue!")
                         songquiz.stop();
                         client.songquizes.delete(member.guild.id);
                     }
