@@ -44,6 +44,8 @@ export default class Hahnrich extends Logger {
      * @param plugin The plugin instance to detach from plugins map
      */
     unloadPlugin(plugin: Plugin): void {
+        this.debug(this.plugins.has(plugin.name));
+        plugin.stop();
         if(this.plugins.has(plugin.name)) {
             this.plugins.delete(plugin.name);
             this.log("Plugin "+plugin.name+" unloaded!")
@@ -96,6 +98,18 @@ export default class Hahnrich extends Logger {
         modules.forEach(module => {
             const instance = new (module)();
             this.loadModule(instance);
+        })
+
+        // start EventListener
+        Plugin.events.on("Restart", (plugin: Plugin) => {
+            if(!plugin) this.error("No plugin for restart specified!");
+            this.log("Restarting plugin:", plugin.name)
+            this.debug("Unloading")
+            this.unloadPlugin(plugin);
+            this.debug("Loading")
+            this.loadPlugin(plugin);
+            this.log("Done reloading plugin");
+            this.debug("Active Plugins:",JSON.stringify([...this.plugins], null, 4));
         })
     }
 }

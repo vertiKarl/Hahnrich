@@ -32,10 +32,8 @@ export default class SongQueue extends EventEmitter {
      * Clones the object and makes a copy of the queue
      * @returns A clone of an instance of type SongQueue
      */
-    clone(): SongQueue {
-        const q = new SongQueue();
-        q.queue = this.queue.slice(0);
-        return q;
+    cloneSongs(): Array<Song> {
+        return this.queue.slice(0);
     }
 
     /**
@@ -61,8 +59,10 @@ export default class SongQueue extends EventEmitter {
      * @param position SongPosition to push to
      */
     pushToPosition(song: Song, position: SongPosition) {
+        console.debug("Pushing", song.name, "to position", position, "(SongPosition) in queue")
         switch(position) {
             case SongPosition.NOW:
+                console.debug("SONGCHANGE EVENT:", song)
                 this.queue[0] = song;
                 this.emit("SongChange");
                 break;

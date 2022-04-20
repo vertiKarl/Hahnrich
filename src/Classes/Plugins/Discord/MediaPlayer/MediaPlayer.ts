@@ -170,14 +170,16 @@ export default class MediaPlayer extends Logger {
         }
         this.debug("Ready?", this.connection.state.status === 'ready')
         if(this.connection.state.status === 'ready') {
-            this.isPlaying = true;
+            
             this.debug("Queue-length: " + this.queue.length)
             this.debug(this.player.state.status)
-            if(this.player.state.status === AudioPlayerStatus.Paused) {
+            if(!force  && this.player.state.status === AudioPlayerStatus.Paused) {
                 this.debug("trying to unpause")
+                this.isPlaying = true;
                 this.player.unpause();
-            } else if(this.player.state.status === AudioPlayerStatus.AutoPaused) {
+            } else if(!force && this.player.state.status === AudioPlayerStatus.AutoPaused) {
                 this.debug("auto paused! trying to unpause!")
+                this.isPlaying = true;
                 this.player.unpause();
             } else {
                 this.debug("trying to play")
@@ -189,8 +191,11 @@ export default class MediaPlayer extends Logger {
                     //     return null;
                     // }
                     // only if there is a song in queue
-                    if(this.queue.currentSong)
+                    this.debug("Am able to play?", !!this.queue.currentSong);
+                    if(this.queue.currentSong) {
+                        this.isPlaying = true;
                         this.player.play(this.queue.currentSong.resource);
+                    }
                 } catch(err) {
                     this.error(err);
                     this.isPlaying = false;

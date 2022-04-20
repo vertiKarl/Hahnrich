@@ -17,7 +17,7 @@ export default class Quiz extends Logger {
     readonly VOTETIME = 20 /* seconds */ * 1000 /* milliseconds */;
     readonly PAUSETIME = 10 /* seconds */ * 1000 /* milliseconds */;
     participants = new Map<string, QuizUser>();
-    cache: SongQueue;
+    cache: Array<Song>;
     stopped = false;
     voting: Message | null = null;
     acceptingVotes = false;
@@ -36,11 +36,16 @@ export default class Quiz extends Logger {
      */
     constructor(public client: ExtendedClient, public interaction: CommandInteraction, public mediaplayer?: MediaPlayer) {
         super();
-        if(!this.mediaplayer) this.mediaplayer = this.getMediaplayer();
+        if(!this.mediaplayer) {
+            this.debug("No mediaplayer provided, creating...")
+            this.mediaplayer = this.getMediaplayer();
+        }
 
-        this.cache = this.mediaplayer.queue.clone();
-        this.mediaplayer.removeAt(0, this.mediaplayer.queue.length);
+        this.debug("Cloning queue...")
+        this.cache = this.mediaplayer.queue.cloneSongs();
+        this.mediaplayer.queue.queue = [];
 
+        if(this.mediaplayer.connection)
         this.startRound();
     }
 
@@ -55,11 +60,14 @@ export default class Quiz extends Logger {
     startRound(): Round {
         if(!this.mediaplayer) throw new Error("Mediaplayer not defined!");
         this.round++;
+        this.debug("Round", this.round, "starting!")
         const round = new Round(this.round, this.generateSong());
 
         this.rounds.set(this.round, round);
         
-        this.mediaplayer.add(round.solution, SongPosition.NOW);
+        const song = this.mediaplayer.add(round.solution, SongPosition.NOW);
+        this.debug("Quiz-Song:", song)
+        this.log("CURRENT SONG:",this.mediaplayer.queue.currentSong);
         this.startVotes();
         return round;
     }
@@ -163,7 +171,7 @@ export default class Quiz extends Logger {
             } else {
                 place = ""
             }
-            participatingString += `${user.place}${user.suffix} ${user.discord.tag} (${user.score})\n`
+            participatingString += `${place}${user.suffix} ${user.discord.tag} (${user.score})\n`
         })
 
         if(participatingString === "") participatingString = "none"
@@ -289,14 +297,18 @@ export default class Quiz extends Logger {
         this.stopped = true;
         // rebuilding original mediaplayer
         if(this.mediaplayer) {
+            // stop playback so garbage collection can take the resource
+            // and it can change the resource
+            //this.mediaplayer.player.stop();
+            
             // replace queue with original
             this.debug("Replacing queue with original")
-            this.mediaplayer.queue = this.cache;
-            this.mediaplayer.play(true);
-        }
-
-        if(this.interaction.guild) {
-            this.client.songquizes.delete(this.interaction.guild.id);
+            // when the original queue had songs
+            if(this.cache.length > 0) {
+                this.mediaplayer.queue.queue = this.cache.slice(0);
+                this.mediaplayer.play(true);
+                this.mediaplayer = undefined;
+            }
         }
     }
 

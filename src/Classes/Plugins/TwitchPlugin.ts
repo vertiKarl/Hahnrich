@@ -18,6 +18,7 @@ export default class TwitchPlugin extends Plugin {
   name = "Twitch";
   description = "A Twitch plugin for Hahnrich!";
   emoji = "💬";
+  client?: ApiClient;
 
     /**
      * Starts the Twitch-client and EventListeners
@@ -153,7 +154,13 @@ export default class TwitchPlugin extends Plugin {
 
     return true;
   }
+
+  stop() {
+    // no stop needed
+  }
+  
 }
+
 
 /**
  * A interface for what the data on fauna looks like

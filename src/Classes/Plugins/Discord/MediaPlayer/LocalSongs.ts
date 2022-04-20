@@ -19,8 +19,12 @@ export default class LocalSongs {
         
 
         while(songs.length < amount) {
-            console.log("Adding song?")
-            songs.push(allSongs[Math.floor(Math.random() * (allSongs.length -1))])
+            const index = Math.floor(Math.random() * (allSongs.length -1));
+
+            songs.push(allSongs[index]);
+
+            // remove song from original array to avoid adding duplicates
+            allSongs.splice(index, 1);
         }
         
         return songs;

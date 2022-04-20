@@ -16,6 +16,7 @@ export default class DiscordPlugin extends Plugin {
     name = "Discord";
     description = "A Discord-bot for Hahnrich";
     emoji = '🎮'
+    client?: ExtendedClient
 
     commands = new Map<string, Command>()
 
@@ -75,6 +76,8 @@ export default class DiscordPlugin extends Plugin {
             intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]
         })
 
+        this.client = client;
+
         client.on('ready', () => {
             if(!client?.user) return;
 
@@ -90,11 +93,19 @@ export default class DiscordPlugin extends Plugin {
             });
         })
 
+        client.on("RequestRestart", () => {
+            Plugin.events.emit("Restart", this);
+        })
+
         client.on('interactionCreate', (interaction) => this.interactionHandler(client, interaction, DiscordPlugin.events));
 
         client.login(token);
 
         return true;
+    }
+
+    stop() {
+        this.client?.destroy();
     }
 
     /**
@@ -124,7 +135,11 @@ export default class DiscordPlugin extends Plugin {
             }
         } catch(err) {
             console.error("Unhandled error in DiscordPlugin:", err)
-            interaction.reply("Failed executing command!")
+            if(!(interaction.replied  || interaction.deferred)) {
+                interaction.reply("Failed executing command!")
+            } else {
+                interaction.editReply("Failed executing command!");
+            }
         }
 
         

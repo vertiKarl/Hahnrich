@@ -1,5 +1,6 @@
 import DownloadClipCommand from "./Commands/DownloadClipCommand";
 import MediaPlayerCommand from "./Commands/MediaPlayerCommand";
+import RestartCommand from "./Commands/RestartCommand";
 import SongQuizCommand from "./Commands/SongQuizCommand";
 
 /**
@@ -8,5 +9,6 @@ import SongQuizCommand from "./Commands/SongQuizCommand";
 export default [
     MediaPlayerCommand,
     SongQuizCommand,
-    DownloadClipCommand
+    DownloadClipCommand,
+    RestartCommand
 ]

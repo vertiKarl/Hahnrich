@@ -14,4 +14,5 @@ export default abstract class Plugin extends Logger {
     abstract emoji: string
 
     abstract execute(): Promise<boolean>
+    abstract stop(): void
 }

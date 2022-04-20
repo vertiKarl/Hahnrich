@@ -30,12 +30,15 @@ export default class Round {
         this.answers.forEach(async (answer, user) => {
             const name = (await this.solution.name).toLowerCase();
             const points = this.compare(name, answer.text);
-            if(points >= 0) {
+            if(points > 0) {
                 answer.isCorrect = true;
                 user.score += points;
                 user.lastIncrease = points;
-            } else {
+            } else if(points === 0) {
                 answer.isCorrect = false;
+                user.lastIncrease = 0;
+            } else {
+                answer.isCorrect = true;
                 user.score -= 1;
                 user.lastIncrease = -1;
             }

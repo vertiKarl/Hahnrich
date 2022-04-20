@@ -67,6 +67,7 @@ export default class SongQuizCommand extends Command {
         try {
             switch(func) {
                 case "start": {
+                    this.debug("Song quiz already running?", !!songquiz);
                     if(!songquiz) {
                         await interaction.deferReply();
                         client.songquizes.set(member.guild.id, new Quiz(client, interaction, mediaplayer));
@@ -95,6 +96,7 @@ export default class SongQuizCommand extends Command {
                     } else {
                         interaction.reply("Stopping quiz and returning to previous queue!")
                         songquiz.stop();
+                        client.songquizes.delete(member.guild.id);
                     }
                     return true;
                 }
