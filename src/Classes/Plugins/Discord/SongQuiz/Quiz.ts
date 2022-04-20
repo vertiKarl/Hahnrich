@@ -116,7 +116,7 @@ export default class Quiz extends Logger {
         setTimeout(() => {
             if(this.stopped) return;
             this.debug("Pause over, deciding what to do next...")
-            if(!this.stopped || this.round <= this.MAXROUNDS) {
+            if(!this.stopped && this.round <= this.MAXROUNDS) {
                 this.debug("starting a new round!")
                 this.startRound();
             } else {
