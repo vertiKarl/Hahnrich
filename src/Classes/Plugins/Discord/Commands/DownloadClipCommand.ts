@@ -1,5 +1,4 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { Permissions, Client, CommandInteraction } from "discord.js";
+import { SlashCommandBuilder, PermissionsBitField, Client, CommandInteraction, CommandInteractionOptionResolver, InteractionType, ChatInputCommandInteraction } from "discord.js";
 import Command from "../Command";
 import https from "https";
 import { load  } from "cheerio";
@@ -12,7 +11,7 @@ import EventEmitter from "events";
  */
 export default class DownloadClipCommand extends Command {
     data = new SlashCommandBuilder();
-    permissions = [Permissions.FLAGS.ADMINISTRATOR];
+    permissions = [PermissionsBitField.Flags.Administrator];
 
     readonly urlPrefix = "https://karlology.eu/clips/"
 
@@ -35,8 +34,10 @@ export default class DownloadClipCommand extends Command {
      * @param events The EventEmitter attached to the DiscordPlugin to communicate with the TwitchPlugin
      * @returns true on success and false on error
      */
-    async execute(client: Client<boolean>, interaction: CommandInteraction, events: EventEmitter): Promise<boolean> {
+    async execute(client: Client<boolean>, interaction: ChatInputCommandInteraction, events: EventEmitter): Promise<boolean> {
         await interaction.deferReply();
+        let responded = false;
+        
         const url = interaction.options.getString("url");
         if(!url) {
             await interaction.editReply("No url specified!")
@@ -46,23 +47,38 @@ export default class DownloadClipCommand extends Command {
         events.emit("DownloadRequest", url);
 
         events.on("DownloadInvalidURL", async () => {
-            await interaction.editReply("Invalid url provided!");
+            if(!responded) {
+                await interaction.editReply("Invalid url provided!");
+                responded = true;
+            }
         })
 
         events.on("DownloadError", async () => {
-            await interaction.editReply("Error when trying to download clip!")
+            if(!responded) {
+                await interaction.editReply("Error when trying to download clip!");
+                responded = true;
+            }
         })
 
-        events.on("DownloadProgress", async (title: string, progress: number) => {
-            await interaction.editReply(`[${progress}%] Downloading ${title}`)
-        })
+        // Currently not implemented
+        // events.on("DownloadProgress", async (title: string, progress: number) => {
+        //     if(!responded) {
+        //         await interaction.editReply(`[${progress}%] Downloading ${title}`);
+        //     }
+        // })
 
         events.on("DownloadAlreadyThere", async (title: string, id: number) => {
-            await interaction.editReply(`Clip ${title} already downloaded!\nYou can find it here: ${this.urlPrefix}${id}`);
+            if(!responded) {
+                await interaction.editReply(`Clip ${title} already downloaded!\nYou can find it here: ${this.urlPrefix}${id}`);
+                responded = true;
+            }
         })
 
         events.on("DownloadFinished", async (title: string, id: number) => {
-            await interaction.editReply(`Finished downloading ${title}, you can find it here: ${this.urlPrefix}${id}`)
+            if(!responded) {
+                await interaction.editReply(`Finished downloading ${title}, you can find it here: ${this.urlPrefix}${id}`);
+                responded = true;
+            }
         })
         return true;
     }

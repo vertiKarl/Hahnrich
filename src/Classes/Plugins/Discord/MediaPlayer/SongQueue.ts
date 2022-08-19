@@ -37,6 +37,45 @@ export default class SongQueue extends EventEmitter {
     }
 
     /**
+     * Shuffles the array containing the songs and triggers a SongChange event.
+     * source: https://stackoverflow.com/a/2450976
+     */
+    shuffle(): void {
+        if(this.queue.length <= 1) return; // nothing to do here
+        this.queue.splice(0, 1);
+
+        let currentIndex = this.queue.length,  randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex != 0) {
+
+            // Pick a remaining element.
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [this.queue[currentIndex], this.queue[randomIndex]] = [
+                this.queue[randomIndex], this.queue[currentIndex]];
+        }
+
+        this.emit("SongChange");
+    }
+
+    /**
+     * Moves a specified index to the end of the queue.
+     * Used by the mediaplayer when Modifier.LOOP is active.
+     * @param index The index of the song to move
+     */
+    moveIndexToEnd(index: number): void {
+        //console.log("MOVING", index, "to END")
+        if(index < 0 || index > this.length) return;
+
+        const i = this.queue.push(this.queue[index]);
+        //console.log(i)
+        this.queue.splice(index, 1);
+    }
+
+    /**
      * Checks if queue has more than one song
      * @returns True if queue has more than one song left
      */

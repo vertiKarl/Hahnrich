@@ -1,4 +1,4 @@
-import { CommandInteraction, Message, MessageEmbed, User } from "discord.js";
+import { CommandInteraction, EmbedBuilder, Message, User } from "discord.js";
 import QuizUser from "./QuizUser";
 import ExtendedClient from "../ExtendedClient";
 import LocalSongs from "../MediaPlayer/LocalSongs";
@@ -151,9 +151,9 @@ export default class Quiz extends Logger {
      * of the active round
      * @returns The resulting Discord-Embed
      */
-    getVotingEmbed(): MessageEmbed {
+    getVotingEmbed(): EmbedBuilder {
         if(!this.currentRound) throw new Error("No round active")
-        const embed = new MessageEmbed();
+        const embed = new EmbedBuilder();
         embed
           .setColor("#02f3f3")
           .setTitle(`Participate with /sq submit`)
@@ -176,7 +176,7 @@ export default class Quiz extends Logger {
 
         if(participatingString === "") participatingString = "none"
 
-        embed.addField("Participants:", participatingString);
+        embed.addFields({name: "Participants:", value: participatingString});
 
         return embed;
     }
@@ -223,7 +223,7 @@ export default class Quiz extends Logger {
      */
     async showResults(round: Round) {
         // TODO: REFACTOR *a lot*
-        const embed = new MessageEmbed();
+        const embed = new EmbedBuilder();
         embed
         .setColor("#02f3f3")
         .setTitle(`Solution:`)
@@ -244,9 +244,10 @@ export default class Quiz extends Logger {
     
         users.forEach(({answer, user}: {answer: Answer, user: QuizUser}) => {
             this.debug("Adding", user.discord.tag, "to results page")
-            embed.addField(
-                `${user.place}${user.suffix} ${user.discord.tag}`,
-                `${answer.text} ${answer.emoji} (${user.score}) ${user.increase}`);
+            embed.addFields({
+                name: `${user.place}${user.suffix} ${user.discord.tag}`,
+                value: `${answer.text} ${answer.emoji} (${user.score}) ${user.increase}`
+            });
         })
 
         await this.interaction.editReply({embeds: [embed]});
@@ -257,7 +258,7 @@ export default class Quiz extends Logger {
      */
     async showFinalResults() {
         // TODO: REFACTOR *a lot*
-          const embed = new MessageEmbed();
+          const embed = new EmbedBuilder();
           embed
             .setColor("#02f3f3")
             .setTitle(`Conclusion:`)
@@ -276,9 +277,10 @@ export default class Quiz extends Logger {
         
             users.forEach((user: QuizUser) => {
                 this.debug("Adding", user.discord.tag, "to final scoreboard")
-                embed.addField(
-                    `${user.place}${user.suffix} ${user.discord.tag}`,
-                    `(${user.score}) ${user.increase}`);
+                embed.addFields({
+                    name: `${user.place}${user.suffix} ${user.discord.tag}`,
+                    value: `(${user.score}) ${user.increase}`
+                });
             })
 
         await this.interaction.editReply({embeds: [embed]});

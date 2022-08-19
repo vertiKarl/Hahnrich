@@ -1,11 +1,10 @@
 import Plugin from "../Plugin";
-import { Intents, Interaction} from "discord.js";
+import { GatewayIntentBits, Partials, Interaction, SlashCommandBuilder, ApplicationCommandType, ApplicationCommandOptionType, ActivityType, ContextMenuCommandBuilder} from "discord.js";
 import { clientId, guildId, token } from "./Discord/config.json";
 import Command from "./Discord/Command";
 import Commands from "./Discord/Commands"
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
-import { SlashCommandBuilder } from "@discordjs/builders";
 import ExtendedClient from "./Discord/ExtendedClient";
 import EventEmitter from "events";
 
@@ -42,7 +41,7 @@ export default class DiscordPlugin extends Plugin {
         return new Promise((resolve, reject) => {
             const rest = new REST().setToken(token);
             const commands = this.loadCommands();
-            const commandData: Array<SlashCommandBuilder> = [];
+            const commandData: Array<SlashCommandBuilder|ContextMenuCommandBuilder> = [];
             commands.forEach(command => {
                 this.commands.set(command.data.name, command);
                 commandData.push(command.data);
@@ -73,7 +72,7 @@ export default class DiscordPlugin extends Plugin {
         };
 
         const client = new ExtendedClient({
-            intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]
+            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
         })
 
         this.client = client;
@@ -84,12 +83,12 @@ export default class DiscordPlugin extends Plugin {
             this.log(`Logged in as ${client.user.tag}`);
 
             client.user.setPresence({
-                activities: [{
-                        name: `Version ${DiscordPlugin.HahnrichVersion}`,
-                        type: "STREAMING",
-                        url: "https://twitch.tv/vertiKarl",
-                    }],
                 status: "online",
+                activities: [{
+                            name: `Version ${DiscordPlugin.HahnrichVersion}`,
+                            type: ActivityType.Streaming,
+                            url: "https://twitch.tv/vertiKarl"
+                    }]
             });
         })
 
@@ -124,7 +123,8 @@ export default class DiscordPlugin extends Plugin {
             if(!interaction.member?.permissions || typeof interaction.member?.permissions === "string") return;
 
             if(!interaction.member?.permissions?.has(command.permissions)) {
-                return await interaction.reply("Insufficient permissions!")
+                await interaction.reply("Insufficient permissions!");
+                return;
             }
         }
 

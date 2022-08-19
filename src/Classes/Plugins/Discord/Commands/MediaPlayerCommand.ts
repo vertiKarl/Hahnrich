@@ -1,17 +1,24 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
 import {
   ButtonInteraction,
   CommandInteraction,
   GuildMember,
   Message,
-  MessageActionRow,
-  MessageButton,
-  MessageEmbed,
-  MessageSelectMenu,
-  MessageSelectOptionData,
+  ActionRowBuilder,
+  SelectMenuBuilder,
+  ButtonStyle,
   Permissions,
   SelectMenuInteraction,
+  SlashCommandBuilder,
   VoiceChannel,
+  CacheType,
+  Interaction,
+  ChatInputCommandInteraction,
+  ActionRowComponent,
+  PermissionsBitField,
+  ButtonBuilder,
+  MessagePayload,
+  MessageActionRowComponentBuilder,
+  EmbedBuilder,
 } from "discord.js";
 import Command from "../Command";
 import fs from "fs";
@@ -19,11 +26,11 @@ import ExtendedClient from "../ExtendedClient";
 import MediaPlayer from "../MediaPlayer/MediaPlayer";
 import search from "youtube-search";
 import Song, { SongType } from "../MediaPlayer/Song";
-import { SongPosition } from "../MediaPlayer/SongQueue";
+import SongQueue, { SongPosition } from "../MediaPlayer/SongQueue";
 import LocalSongs from "../MediaPlayer/LocalSongs";
 import { ytKey } from "../config.json";
 import EventEmitter from "events";
-import { MessageButtonStyles } from "discord.js/typings/enums";
+import { Modifier } from "../MediaPlayer/SongQueueModifier";
 
 /**
  * A command which interacts with MediaPlayer, to play audio in a Discord-VoiceChannel
@@ -53,9 +60,11 @@ export default class MediaPlayerCommand extends Command {
             position
               .setName("position")
               .setDescription("Add song to:")
-              .addChoice("Now", "now")
-              .addChoice("Next", "next")
-              .addChoice("End", "end")
+              .addChoices(
+                { name: 'Now', value: 'now' },
+                { name: 'Next', value: 'next' },
+                { name: 'End', value: 'end' },
+              )
               .setRequired(false)
           )
       )
@@ -81,6 +90,35 @@ export default class MediaPlayerCommand extends Command {
             option.setName("amount").setDescription("Amount of songs to add")
           )
       )
+      .addSubcommand((cmd) => 
+      cmd
+      .setName("repeat")
+      .setDescription("Toggles the repeating of current song")
+      .addBooleanOption((option) =>
+      option
+        .setName("state")
+        .setDescription("On or off (dont specify for toggle)")
+        .setRequired(false)
+        )
+      
+      )
+      .addSubcommand((cmd) => 
+      cmd
+      .setName("loop")
+      .setDescription("Toggles the repeating of whole playlist")
+      .addBooleanOption((option) =>
+      option
+        .setName("state")
+        .setDescription("On or off (dont specify for toggle)")
+        .setRequired(false)
+        )
+      
+      )
+      .addSubcommand((cmd) => 
+      cmd
+      .setName("shuffle")
+      .setDescription("Shuffle the playlist once!")
+      )
       .addSubcommand((cmd) =>
         cmd.setName("current").setDescription("Displays currently playing song")
       )
@@ -105,7 +143,7 @@ export default class MediaPlayerCommand extends Command {
    */
   async execute(
     client: ExtendedClient,
-    interaction: CommandInteraction
+    interaction: ChatInputCommandInteraction
   ): Promise<boolean> {
     const func = interaction.options.getSubcommand();
     
@@ -166,7 +204,7 @@ export default class MediaPlayerCommand extends Command {
               case "now":
                 pos = SongPosition.NOW;
                 break;
-              case "nex":
+              case "next":
                 pos = SongPosition.NEXT;
                 break;
               default:
@@ -177,11 +215,11 @@ export default class MediaPlayerCommand extends Command {
               mediaplayer = this.createMediaplayer(client, member, interaction);
             }
             const song = mediaplayer.add(new Song(potentialType, target), pos);
-            this.showSong(interaction, song, pos);
+            this.showSong(interaction, song, pos, mediaplayer);
             return true;
           }
           
-          let localResults: Array<MessageSelectOptionData> = [];
+          let localResults: Array<any> = [];
           LocalSongs.getSongs().forEach((song) => {
             if(localResults.length >= 5) return;
             if (song.toLowerCase().includes(target.toLowerCase())) {
@@ -194,7 +232,7 @@ export default class MediaPlayerCommand extends Command {
             }
           });
 
-          let onlineResults: Array<MessageSelectOptionData> = [];
+          let onlineResults: Array<any> = [];
 
 
           await search(
@@ -220,14 +258,14 @@ export default class MediaPlayerCommand extends Command {
                 });
               });
 
-              const components = []
+              const components: Array<ActionRowBuilder<MessageActionRowComponentBuilder>> = []
 
-              const rowLocal = new MessageActionRow()
-              const rowOnline = new MessageActionRow()
+              const rowLocal = new ActionRowBuilder<MessageActionRowComponentBuilder>()
+              const rowOnline = new ActionRowBuilder<MessageActionRowComponentBuilder>()
 
               if(localResults.length > 0) {
                 rowLocal.addComponents(
-                  new MessageSelectMenu()
+                  new SelectMenuBuilder()
                   .setCustomId("local")
                   .setPlaceholder("- Local Results -")
                   .addOptions(localResults)
@@ -237,7 +275,7 @@ export default class MediaPlayerCommand extends Command {
               }
               if(onlineResults.length > 0) {
                 rowOnline.addComponents(
-                  new MessageSelectMenu()
+                  new SelectMenuBuilder()
                   .setCustomId("online")
                   .setPlaceholder("- Online Results - ")
                   .addOptions(onlineResults)
@@ -294,7 +332,7 @@ export default class MediaPlayerCommand extends Command {
                   }
 
                   addedSong = mediaplayer.add(song, pos);
-                  this.showSong(interaction, addedSong, pos);
+                  this.showSong(interaction, addedSong, pos, mediaplayer);
                 }
               );
             }
@@ -342,9 +380,7 @@ export default class MediaPlayerCommand extends Command {
           }
 
           if(position === 0) {
-            const nextSong = mediaplayer.queue.nextSong;
-
-            this.showSong(interaction, song, SongPosition.NOW, nextSong);
+            this.showSong(interaction, song, SongPosition.NOW, mediaplayer);
           } else {
             await interaction.editReply("Skipped " + amount + " songs!");
           }
@@ -357,7 +393,7 @@ export default class MediaPlayerCommand extends Command {
             return false;
           }
           const songs = mediaplayer.queue.queue
-          let embed = new MessageEmbed();
+          let embed = new EmbedBuilder();
           embed
             .setColor("#02f3f3")
             .setTitle(`Queue[${songs.length}]:`)
@@ -372,17 +408,24 @@ export default class MediaPlayerCommand extends Command {
               url: "https://karlology.eu",
             });
 
+          let suffix = ""
+          if(mediaplayer.modifiers.get(Modifier.LOOP)) suffix += "🔁";
+          if(mediaplayer.modifiers.get(Modifier.REPEAT)) suffix+= "🔂";
+
           if (mediaplayer.queue.length >= 1) {
             this.debug("Queue:")
+            if(suffix.length > 0) embed.addFields({
+              name: suffix, value: "\u200B"
+            })
             for(let i = 0; i < Math.min(5, songs.length); i++) {
               this.debug(i+1, await songs[i].name)
-              embed.addField(`${i+1}: ${await songs[i].name}`, "\u200B");
+              embed.addFields({name:`${i+1}: ${await songs[i].name}`, value: "\u200B"});
             };
           } else {
-            embed.addField(
-              "No songs in queue",
-              "It looks pretty empty here, want to add something?"
-            );
+            embed.addFields({
+              name: "No songs in queue",
+              value: "It looks pretty empty here, want to add something?"
+          });
           }
 
           await interaction.reply({ embeds: [embed] });
@@ -404,12 +447,79 @@ export default class MediaPlayerCommand extends Command {
 
           const songs = LocalSongs.randomSongs(amount)
 
-          for(const song of songs) {
+          for(const file of songs) {
+            const song = new Song(SongType.FILE, file);
+            console.debug("TEST:",song.name)
             mediaplayer.add(song, SongPosition.END);
           };
 
           await interaction.reply("Added " + amount + " random songs to queue!")
 
+          return true;
+        }
+        case "repeat": {
+          await interaction.deferReply();
+          if(!mediaplayer) {
+            await interaction.editReply("No mediaplayer active!");
+            return false;
+          }
+
+          let state = interaction.options.getBoolean("repeat");
+          let setState = mediaplayer.modifiers.get(Modifier.REPEAT);
+          if(setState === null) throw new Error("Invalid state in Mediaplayer!");
+
+          if(state === null) {
+            state = !setState;
+          }
+          
+          mediaplayer.modifiers.set(Modifier.REPEAT, state);
+          let text = "Repeating turned ";
+          
+          if(state) {
+            text += "on!"
+          } else {
+            text += "off!"
+          }
+
+          await interaction.editReply(text)
+          return true;
+        }
+        case "loop": {
+          await interaction.deferReply();
+          if(!mediaplayer) {
+            await interaction.editReply("No mediaplayer active!");
+            return false;
+          }
+
+          let state = interaction.options.getBoolean("loop");
+          let setState = mediaplayer.modifiers.get(Modifier.LOOP);
+          if(setState === null) throw new Error("Invalid state in Mediaplayer!");
+
+          if(state === null) {
+            state = !setState;
+          }
+          
+          mediaplayer.modifiers.set(Modifier.LOOP, state);
+          let text = "Looping turned ";
+          
+          if(state) {
+            text += "on!"
+          } else {
+            text += "off!"
+          }
+
+          await interaction.editReply(text)
+          return true;
+        }
+        case "shuffle": {
+          if(!mediaplayer) {
+            await interaction.reply("No mediaplayer active!");
+            return false;
+          }
+
+          mediaplayer.queue.shuffle();
+
+          await interaction.reply("Playlist shuffled!")
           return true;
         }
         case "current": {
@@ -419,11 +529,10 @@ export default class MediaPlayerCommand extends Command {
           }
           await interaction.deferReply();
           const song = mediaplayer.queue.currentSong;
-          const nextSong = mediaplayer.queue.nextSong;
           
           if(song) {
 
-            this.showSong(interaction, song, SongPosition.NOW, nextSong);
+            this.showSong(interaction, song, SongPosition.NOW, mediaplayer);
           } else {
             await interaction.editReply("Nothing to see here")
           }
@@ -451,31 +560,36 @@ export default class MediaPlayerCommand extends Command {
             return false;
           }
 
-          if(!member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
+          if(!member.permissions.has(PermissionsBitField.Flags.Administrator)) {
             await interaction.editReply("Insufficient permission!");
             return false;
           }
           const target = mediaplayer.queue.currentSong;
           if(target?.type === SongType.FILE) {
-            const components = []
+            const components: Array<ActionRowBuilder<MessageActionRowComponentBuilder>> = []
 
-              const row = new MessageActionRow()
+              const row = new ActionRowBuilder<MessageActionRowComponentBuilder>()
               .addComponents(
                 [
-                  new MessageButton()
+                  new ButtonBuilder()
                 .setCustomId("yes")
                 .setLabel("👍")
-                .setStyle(MessageButtonStyles.DANGER),
-                new MessageButton()
+                .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
                 .setCustomId("no")
                 .setLabel("👎")
-                .setStyle(MessageButtonStyles.PRIMARY)
+                .setStyle(ButtonStyle.Primary)
               ]
               )
 
               components.push(row)
 
-              const payload = { content: `Are you sure you want to delete ${await target.name}?`, ephemeral: true, embeds: [], components }
+              const payload = {
+                content: `Are you sure you want to delete ${await target.name}?`,
+                ephemeral: true,
+                embeds: [],
+                components
+              }
               const message = await interaction.editReply(payload);
 
               if (!(message instanceof Message)) throw new Error("message is not a message!");
@@ -534,8 +648,8 @@ export default class MediaPlayerCommand extends Command {
    * @param song The song to display
    * @param next [Optional] The upcoming song
    */
-  async showSong(interaction: CommandInteraction | SelectMenuInteraction, song: Song, position: SongPosition, next?: Song | null) {
-    const embed = new MessageEmbed();
+  async showSong(interaction: CommandInteraction | SelectMenuInteraction, song: Song, position: SongPosition, mp: MediaPlayer) {
+    const embed = new EmbedBuilder();
 
     switch(position) {
       case SongPosition.NOW: {
@@ -564,7 +678,7 @@ export default class MediaPlayerCommand extends Command {
             iconURL: thumbnails[thumbnails.length - 1].url,
             url: artist.channel_url,
           })
-          .addField("\u200B", `[${await song.name}](${song.source})`)
+          .addFields({name: "\u200B", value: `[${await song.name}](${song.source})`})
           .setImage(await song.thumbnail);
         break;
       }
@@ -573,17 +687,18 @@ export default class MediaPlayerCommand extends Command {
           .setAuthor({
             name: "📁 Local File",
           })
-          .addField("\u200B", await song.name);
+          .addFields({name: "\u200B", value: await song.name});
       }
     }
 
-    if(next) {
+    if(mp.queue.nextSong) {
       embed.setFooter({
-        text: "Coming up: " + await next.name,
+        text: "Coming up: " + await mp.queue.nextSong.name,
       });
     }
 
-    await interaction.editReply({ embeds: [ embed ], components: [] })
+    const reply = await interaction.editReply({ embeds: [ embed ], components: [] })
+    mp.messageHistory.set(reply.id, song);
   }
 
  /**

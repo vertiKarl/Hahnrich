@@ -2,6 +2,7 @@ import { AudioResource, createAudioResource } from "@discordjs/voice";
 import ytdl, { Author } from "ytdl-core";
 import Logger from "../../../Logger";
 import LocalSongs from "./LocalSongs";
+//import { parseFile } from 'music-metadata';
 
 export enum SongType {
     YOUTUBE, FILE, EMBED
@@ -12,6 +13,30 @@ export default class Song extends Logger {
 
     constructor(readonly type: SongType, readonly source: string) {
         super()
+    }
+
+    get length(): Promise<number> {
+        switch(this.type) {
+            case SongType.YOUTUBE: {
+                return (async () => {
+                    return parseInt((await ytdl.getInfo(this.source)).videoDetails.lengthSeconds)
+                })()
+            }
+            case SongType.FILE: {
+                return (async () => {
+                    // TODO: music-metadata uses require() which is not supported
+                    return -1
+                    // const metadata = await parseFile(this.source, { duration: true })
+                    // return metadata?.format?.duration === undefined ? -1 : metadata.format.duration;
+                })()
+            }
+            case SongType.EMBED: {
+                return (async () => {
+                    // not implemented
+                    return -1;
+                })()
+            }
+        }
     }
     
     get resource(): AudioResource {
@@ -27,6 +52,18 @@ export default class Song extends Logger {
                 // TODO: implement handling for discord embeds
                 return createAudioResource("");
                 //return createAudioResource(got.stream(this.source))
+        }
+    }
+
+    get path(): string {
+        switch(this.type) {
+            case SongType.FILE:
+                return __dirname + "/../../../../../Songs/" + this.source
+            case SongType.YOUTUBE:
+                return this.source;
+            case SongType.EMBED:
+                // TODO: implement handling for discord embeds
+                return "";
         }
     }
 

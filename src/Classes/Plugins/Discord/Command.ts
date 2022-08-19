@@ -1,14 +1,14 @@
-import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders"
-import { Client, Interaction, PermissionResolvable } from "discord.js"
+import { CommandInteraction, ContextMenuCommandBuilder, PermissionResolvable, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js"
 import EventEmitter from "events"
 import Logger from "../../Logger"
+import ExtendedClient from "./ExtendedClient"
 
 /**
  * Parent class from which commands inherit
  */
 export default abstract class Command extends Logger {
     emoji = '🎮🛠️'
-    abstract data: SlashCommandBuilder
+    abstract data: SlashCommandBuilder | ContextMenuCommandBuilder
     abstract permissions: Array<PermissionResolvable>
-    abstract execute(client: Client, interaction: Interaction, events?: EventEmitter): Promise<boolean>
+    abstract execute(client: ExtendedClient, interaction: CommandInteraction, events?: EventEmitter): Promise<boolean>
 }

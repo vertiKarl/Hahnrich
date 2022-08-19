@@ -1,5 +1,4 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { PermissionResolvable, Client, Interaction, CacheType, CommandInteraction, GuildMember } from "discord.js";
+import { SlashCommandBuilder, PermissionResolvable, Client, Interaction, CacheType, CommandInteraction, GuildMember, ChatInputCommandInteraction } from "discord.js";
 import EventEmitter from "events";
 import Command from "../Command";
 import ExtendedClient from "../ExtendedClient";
@@ -44,7 +43,7 @@ export default class SongQuizCommand extends Command {
    * @param interaction The interaction which triggered this command
    * @returns true on success and false on error
    */
-    async execute(client: ExtendedClient, interaction: CommandInteraction): Promise<boolean> {
+    async execute(client: ExtendedClient, interaction: ChatInputCommandInteraction): Promise<boolean> {
         const func = interaction.options.getSubcommand();
         let answer = interaction.options.getString("answer");
         

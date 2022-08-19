@@ -3,8 +3,10 @@ import { Client, CommandInteraction, GuildMember, Interaction, VoiceBasedChannel
 import fs from "fs"
 import Logger from "../../../Logger"
 import ExtendedClient from "../ExtendedClient"
+import { Modifier } from "./SongQueueModifier"
 import Song, { SongType } from "./Song"
 import SongQueue, { SongPosition } from "./SongQueue"
+import ytdl from "ytdl-core"
 
 export default class MediaPlayer extends Logger {
     queue = new SongQueue()
@@ -13,6 +15,12 @@ export default class MediaPlayer extends Logger {
     emoji = "🎚"
     connection: VoiceConnection;
     channel: VoiceChannel;
+    modifiers = new Map<Modifier, boolean>([
+        [Modifier.REPEAT, false],
+        [Modifier.LOOP, false]
+    ]);
+    messageHistory = new Map<string, Song>();
+
     readonly maxIdleTime: number = 5 * 60 * 1000 //  5 Minutes
 
     /**
@@ -77,7 +85,7 @@ export default class MediaPlayer extends Logger {
         })
 
         // Auto timeout and disconnect
-        this.player.on(AudioPlayerStatus.Idle, () => {
+        this.player.on(AudioPlayerStatus.Idle, async () => {
             this.debug("Idle, trying to find next song")
             this.isPlaying = false;
 
@@ -86,11 +94,39 @@ export default class MediaPlayer extends Logger {
                 return;
             }
 
+            if(this.modifiers.get(Modifier.REPEAT)) {
+                this.play(true);
+                return;
+            }
+
             if(this.queue.hasNext()) {
                this.debug("Has next, trying to play")
                // Next song!
-               this.removeAt(0, 1);
-               this.play(true);
+               if(this.modifiers.get(Modifier.LOOP)) {
+                this.queue.moveIndexToEnd(0);
+                this.play(true);
+               } else {
+                   this.removeAt(0, 1);
+                   this.play(true);
+               }
+            } else if(this.queue.currentSong?.type === SongType.YOUTUBE) {
+                console.log("Related videos?", this.queue.currentSong.name)
+                const related = (await ytdl.getInfo(this.queue.currentSong.path)).related_videos;
+                const potentialNextVideos: Array<ytdl.relatedVideo> = [];
+                related.forEach(video => {
+                    if(video && video.length_seconds) {
+                        if(video.length_seconds || video.length_seconds < 60*7) potentialNextVideos.push(video);
+                    }
+                })
+                for(const video of potentialNextVideos) {
+                    const link = "https://youtube.com/watch?v="+video.id;
+                    const info = await ytdl.getInfo(link);
+                    if(info.videoDetails.category === "Music") {
+                        this.debug("adding related video to queue to avoid silence")
+                        this.add(link, SongPosition.NOW);
+                        break;
+                    }
+                }
             } else {
                 this.debug("nothing to play, starting leave countdown")
                 this.queue.queue = [];
@@ -107,7 +143,7 @@ export default class MediaPlayer extends Logger {
 
         this.queue.on("push", () => {
             this.debug("Pushed something, startin this.play()")
-            this.play();
+            if(!this.isPlaying) this.play();
         })
 
         this.queue.on("SongChange", () => {
@@ -136,6 +172,7 @@ export default class MediaPlayer extends Logger {
         })()
 
         this.queue.pushToPosition(song, position)
+
         return song;
     }
 
@@ -173,6 +210,7 @@ export default class MediaPlayer extends Logger {
             
             this.debug("Queue-length: " + this.queue.length)
             this.debug(this.player.state.status)
+            this.debug("TYPE:", this.queue.currentSong?.type);
             if(!force  && this.player.state.status === AudioPlayerStatus.Paused) {
                 this.debug("trying to unpause")
                 this.isPlaying = true;
@@ -184,12 +222,6 @@ export default class MediaPlayer extends Logger {
             } else {
                 this.debug("trying to play")
                 try {
-                    // if(!this.queue.hasNext()) {
-                    //     this.debug("nothing to play!")
-                    //     this.isPlaying = false;
-                    //     this.player.stop();
-                    //     return null;
-                    // }
                     // only if there is a song in queue
                     this.debug("Am able to play?", !!this.queue.currentSong);
                     if(this.queue.currentSong) {
