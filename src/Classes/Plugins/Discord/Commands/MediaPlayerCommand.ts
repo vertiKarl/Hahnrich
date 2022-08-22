@@ -241,6 +241,7 @@ export default class MediaPlayerCommand extends Command {
               maxResults: 5,
               key: ytKey,
               type: "video",
+              videoCategoryId: "10" //music
             },
             async (err, results) => {
               if (err) {
@@ -341,8 +342,13 @@ export default class MediaPlayerCommand extends Command {
           return true;
         }
         case "skip": {
+          //  TODO: refactor a lot
           if(!mediaplayer) {
             await interaction.reply("No mediaplayer active!");
+            return false;
+          }
+          if(!mediaplayer.queue.currentSong) {
+            await interaction.reply("No song to skip.");
             return false;
           }
           await interaction.deferReply();
@@ -359,31 +365,40 @@ export default class MediaPlayerCommand extends Command {
 
           if(!amount) {
             amount = 1;
-          } else if(!amount || amount <= 0) {
+          }
+
+          if(amount <= 0) {
             await interaction.editReply("Negative or zero amount not possible!")
             return false;
-          } else if(position + amount > mediaplayer.queue.length) {
+          }
+
+          if(position + amount > mediaplayer.queue.length) {
             await interaction.editReply("Skipping more songs than in queue not possible!\nTo clear queue use /mp clear!")
             return false;
           }
 
+          let song: Song | null = null;
 
-          this.debug("Trying to remove songs from:", position, "to", position+amount);
-          
-          const song = mediaplayer.removeAt(position, amount);
-
-          
-
-          if(!song) {
-            await interaction.editReply("Skipping not possible, did you specify a negative amount?")
-            return false;
-          }
-
-          if(position === 0) {
-            this.showSong(interaction, song, SongPosition.NOW, mediaplayer);
+          if(position + amount === mediaplayer.queue.length) {
+            this.debug("Clearing queue for related video fetching!")
+            mediaplayer.clear();
+            await interaction.editReply("Getting related video!");
           } else {
-            await interaction.editReply("Skipped " + amount + " songs!");
+            this.debug("Trying to remove songs from:", position, "to", position+amount);
+          
+            song = mediaplayer.removeAt(position, amount);
+            if(!song) {
+              await interaction.editReply("Skipping not possible?")
+              return false;
+            }
+  
+            if(position === 0 && song) {
+              this.showSong(interaction, song, SongPosition.NOW, mediaplayer);
+            } else {
+              await interaction.editReply("Skipped " + amount + " songs!");
+            }
           }
+
           
           return true;
         }

@@ -123,7 +123,7 @@ export default class DiscordPlugin extends Plugin {
             if(!interaction.member?.permissions || typeof interaction.member?.permissions === "string") return;
 
             if(!interaction.member?.permissions?.has(command.permissions)) {
-                await interaction.reply("Insufficient permissions!");
+                await interaction.reply({ ephemeral: true, content: "Insufficient permissions!"});
                 return;
             }
         }
