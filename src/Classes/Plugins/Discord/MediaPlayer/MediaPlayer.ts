@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionDisconnectedOtherState, VoiceConnectionDisconnectedState, VoiceConnectionDisconnectedWebSocketState, VoiceConnectionDisconnectReason, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice"
+import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionDisconnectedOtherState, VoiceConnectionDisconnectedState, VoiceConnectionDisconnectedWebSocketState, VoiceConnectionDisconnectReason, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice"
 import { Client, CommandInteraction, GuildMember, Interaction, VoiceBasedChannel, VoiceChannel } from "discord.js"
 import fs from "fs"
 import Logger from "../../../Logger"
@@ -6,7 +6,9 @@ import ExtendedClient from "../ExtendedClient"
 import { Modifier } from "./SongQueueModifier"
 import Song, { SongType } from "./Song"
 import SongQueue, { SongPosition } from "./SongQueue"
+import { ytKey } from "../config.json";
 import ytdl from "ytdl-core"
+import search from "youtube-search"
 
 export default class MediaPlayer extends Logger {
     queue = new SongQueue()
@@ -20,6 +22,7 @@ export default class MediaPlayer extends Logger {
         [Modifier.LOOP, false]
     ]);
     messageHistory = new Map<string, Song>();
+    songHistory: Array<Song> = [];
 
     readonly maxIdleTime: number = 5 * 60 * 1000 //  5 Minutes
 
@@ -57,17 +60,12 @@ export default class MediaPlayer extends Logger {
             ) => {
                 this.debug("Got disconnected reason:", newState.reason)
                 switch(newState.reason) {
-                    case VoiceConnectionDisconnectReason.EndpointRemoved: {
-                        this.connection.destroy();
+                    case VoiceConnectionDisconnectReason.WebSocketClose: {
+                        this.connection.destroy()
                         client.mediaplayers.delete(channel.guild.id);
                         break;
                     }
                     case VoiceConnectionDisconnectReason.Manual: {
-                        this.connection.destroy();
-                        client.mediaplayers.delete(channel.guild.id);
-                        break;
-                    }
-                    case VoiceConnectionDisconnectReason.WebSocketClose: {
                         this.connection.destroy();
                         client.mediaplayers.delete(channel.guild.id);
                         break;
@@ -110,23 +108,78 @@ export default class MediaPlayer extends Logger {
                    this.play(true);
                }
             } else if(this.queue.currentSong?.type === SongType.YOUTUBE) {
+                // Play related videos if queue is otherwise empty
                 console.log("Related videos?", this.queue.currentSong.name)
-                const related = (await ytdl.getInfo(this.queue.currentSong.path)).related_videos;
+                const data = (await ytdl.getInfo(this.queue.currentSong.path))
+                const related = data.related_videos;
                 const potentialNextVideos: Array<ytdl.relatedVideo> = [];
                 related.forEach(video => {
                     if(video && video.length_seconds) {
                         if(video.length_seconds || video.length_seconds < 60*7) potentialNextVideos.push(video);
                     }
                 })
-                for(const video of potentialNextVideos) {
+                let duplicates: Array<string> = [];
+                for(let j = 0; j < potentialNextVideos.length; j++) {
+                    const video = potentialNextVideos[j];
                     const link = "https://youtube.com/watch?v="+video.id;
                     const info = await ytdl.getInfo(link);
                     if(info.videoDetails.category === "Music") {
-                        this.debug("adding related video to queue to avoid silence")
-                        this.add(link, SongPosition.NOW);
-                        break;
+                        const historyLength = this.songHistory.length;
+                        let foundDuplicate = false;
+                        if(historyLength > 0) {
+                            for(let i = historyLength-1; i > Math.max(0, historyLength-5); i--) {
+                                if(link === this.songHistory[i].source)  {
+                                    this.debug("Song already recently played! Skipping.");
+                                    foundDuplicate = true;
+                                    duplicates.push(link)
+                                    break;
+                                }
+
+                            }
+                        }
+                        if(!foundDuplicate) {
+                            this.debug("adding related video to queue to avoid silence")
+                            this.add(link, SongPosition.NOW);
+                            return;
+                        }
                     }
                 }
+                // did not find anything
+
+                if(duplicates.length !== 0) {
+                    this.debug("Only found duplicate, adding!");
+                    this.add(duplicates[0], SongPosition.NOW);
+                    return;
+                }
+
+                this.log("No duplicates found, trying search terms");
+
+                // if no duplicates and no videos found
+                // Random search terms
+                const searchTerms = [
+                    "Selphius", "Jinja", "Myun", "Shinaruhime", "EineLotta", "Ulrich Haus", "S3RL", "BLACKPINK", "Rammstein", "Terraria", "Minecraft",  "Portal",
+                    "Celeste", "Undertale", "Deltarune", "Matstubs", "VTubers", "Hololive", "VSHOJO", "Cover", "Tomodachi Life", "EGAL", "Calliope Mori",
+                    "Takanashi Kiara", "KIRA", "DETI RAVE", "vertiKarl", "1 2 Haferbrei",  "Alan Aztec", "Cepheid"
+                ]
+                const randomIndex = Math.floor(Math.random() * searchTerms.length);
+                await search(searchTerms[randomIndex], {
+                    maxResults: 5,
+                    key: ytKey,
+                    type: "video",
+                    videoCategoryId: "10" //music
+                }, async (err, results) => {
+                    if (err) {
+                      this.error("Unable to fetch YouTube-Videos: ", err);
+                    }
+                    if(!results) throw new Error("No YouTube-Videos found!")
+
+                    const randomIndex = Math.floor(Math.random() * results.length);
+
+                    const randomVideo = results[randomIndex];
+
+                    this.add(randomVideo.link, SongPosition.NOW);
+                })
+
             } else {
                 this.debug("nothing to play, starting leave countdown")
                 this.queue.queue = [];
@@ -141,6 +194,14 @@ export default class MediaPlayer extends Logger {
             }
         })
 
+        this.player.on('error', error => {
+            console.error(`Error: ${error.message} with resource ${error.resource instanceof AudioResource ? error.resource.metadata.title : "unknown"}`);
+            if(!this.removeAt(0, 1)) {
+                this.debug("No more to play, returning to idle state")
+                this.clear();
+            }
+        });
+
         this.queue.on("push", () => {
             this.debug("Pushed something, startin this.play()")
             if(!this.isPlaying) this.play();
@@ -150,7 +211,7 @@ export default class MediaPlayer extends Logger {
             this.debug("Triggering refresh")
             this.play(true);
         })
-    }
+    } 
 
     /**
      * Adds a given song to a specified position in this.queue
@@ -185,7 +246,7 @@ export default class MediaPlayer extends Logger {
      */
     removeAt(index: number, amount: number): Song | null {
         this.debug("Trying to remove", amount, "songs at", index);
-        if(index >= 0 && index < this.queue.length && index + amount <= this.queue.length && amount > 0) {
+        if(index >= 0 && index < this.queue.length && index + amount < this.queue.length && amount > 0) {
             this.queue.splice(index, amount);
             return this.play(index === 0);
         }
@@ -200,6 +261,10 @@ export default class MediaPlayer extends Logger {
      * @returns The playing song or null if there is nothing to play
      */
     play(force = false): Song | null {
+        if(!this.queue.currentSong) {
+            this.debug("No song to play")
+            return null;
+        }
         this.debug("isPlaying:", this.isPlaying);
         if(!force && this.isPlaying) {
             this.debug("Already playing!")
@@ -215,10 +280,12 @@ export default class MediaPlayer extends Logger {
                 this.debug("trying to unpause")
                 this.isPlaying = true;
                 this.player.unpause();
+                return this.queue.currentSong;
             } else if(!force && this.player.state.status === AudioPlayerStatus.AutoPaused) {
                 this.debug("auto paused! trying to unpause!")
                 this.isPlaying = true;
                 this.player.unpause();
+                return this.queue.currentSong;
             } else {
                 this.debug("trying to play")
                 try {
@@ -236,6 +303,8 @@ export default class MediaPlayer extends Logger {
                     }
                 }
             }
+
+            this.songHistory.push(this.queue.currentSong);
             
             return this.queue.currentSong;
         } else {
@@ -256,6 +325,10 @@ export default class MediaPlayer extends Logger {
     stop(): void {
         this.connection.destroy();
         this.client.mediaplayers.delete(this.channel.guild.id);
+    }
+
+    clear(): void {
+        this.player.stop(true)
     }
 
     changeChannel(channel: VoiceChannel): void {
