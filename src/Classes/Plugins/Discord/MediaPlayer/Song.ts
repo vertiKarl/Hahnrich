@@ -10,9 +10,11 @@ export enum SongType {
 
 export default class Song extends Logger {
     emoji = "🎵";
+    readonly resource: AudioResource;
 
     constructor(readonly type: SongType, readonly source: string) {
         super()
+        this.resource = this.generateResource();
     }
 
     get length(): Promise<number> {
@@ -39,7 +41,7 @@ export default class Song extends Logger {
         }
     }
     
-    get resource(): AudioResource {
+    generateResource(): AudioResource {
         switch(this.type) {
             case SongType.FILE:
                 this.debug(__dirname + "/../../../../../Songs/" + this.source)

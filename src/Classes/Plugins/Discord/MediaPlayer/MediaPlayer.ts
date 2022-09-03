@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerStatus, AudioResource, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionDisconnectedOtherState, VoiceConnectionDisconnectedState, VoiceConnectionDisconnectedWebSocketState, VoiceConnectionDisconnectReason, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice"
+import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, AudioResource, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionDisconnectedOtherState, VoiceConnectionDisconnectedState, VoiceConnectionDisconnectedWebSocketState, VoiceConnectionDisconnectReason, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice"
 import { Client, CommandInteraction, GuildMember, Interaction, VoiceBasedChannel, VoiceChannel } from "discord.js"
 import fs from "fs"
 import Logger from "../../../Logger"
@@ -194,8 +194,8 @@ export default class MediaPlayer extends Logger {
             }
         })
 
-        this.player.on('error', error => {
-            console.error(`Error: ${error.message} with resource ${error.resource instanceof AudioResource ? error.resource.metadata.title : "unknown"}`);
+        this.player.on('error', (error: AudioPlayerError) => {
+            console.error(`Error: ${error.message} with resource ${error.resource instanceof AudioResource ? error.resource : "unknown"}`);
             if(!this.removeAt(0, 1)) {
                 this.debug("No more to play, returning to idle state")
                 this.clear();
@@ -203,7 +203,7 @@ export default class MediaPlayer extends Logger {
         });
 
         this.queue.on("push", () => {
-            this.debug("Pushed something, startin this.play()")
+            this.debug("Pushed something, starting this.play()")
             if(!this.isPlaying) this.play();
         })
 
