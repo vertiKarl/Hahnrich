@@ -7,8 +7,6 @@ export default class RestartCommand extends Command {
     data = new SlashCommandBuilder();
     permissions = [PermissionsBitField.Flags.Administrator];
 
-    readonly urlPrefix = "https://karlology.eu/clips/"
-
     constructor() {
         super()
         this.data
