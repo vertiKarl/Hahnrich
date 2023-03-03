@@ -247,7 +247,10 @@ export default class MediaPlayerCommand extends Command {
               if (err) {
                 this.error("Unable to fetch YouTube-Videos: ", err);
               }
-              if(!results) throw new Error("No YouTube-Videos found!")
+              if(!results) {
+                interaction.editReply("No Videos found.")
+                return true
+              }
               
 
               results.forEach((res) => {

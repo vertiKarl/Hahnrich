@@ -54,6 +54,10 @@ export default class MediaPlayer extends Logger {
             if(!this.isPlaying) this.play();
         })
 
+        this.connection.on("stateChange", (oldState, newState) => {
+            this.debug(`Connection changed from`, oldState, "to", newState, `!`)
+        })
+
         this.connection.on(VoiceConnectionStatus.Disconnected, (
             oldState: VoiceConnectionState,
             newState: (VoiceConnectionDisconnectedOtherState & { status: VoiceConnectionStatus.Disconnected; }) | (VoiceConnectionDisconnectedWebSocketState)
@@ -270,7 +274,7 @@ export default class MediaPlayer extends Logger {
             this.debug("Already playing!")
             return this.queue.currentSong;
         }
-        this.debug("Ready?", this.connection.state.status === 'ready')
+        this.debug("Connection status", this.connection.state.status)
         if(this.connection.state.status === 'ready') {
             
             this.debug("Queue-length: " + this.queue.length)

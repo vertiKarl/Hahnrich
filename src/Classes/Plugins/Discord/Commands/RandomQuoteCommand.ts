@@ -5,7 +5,7 @@ import ExtendedClient from "../ExtendedClient";
 
 export default class RandomQuoteCommand extends Command {
     data = new SlashCommandBuilder();
-    permissions = [PermissionsBitField.Flags.ViewChannel];
+    permissions = [PermissionsBitField.Flags.Administrator];
 
     constructor() {
         super()

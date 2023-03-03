@@ -1,6 +1,6 @@
 import Plugin from "../Plugin";
 import { GatewayIntentBits, Partials, Interaction, SlashCommandBuilder, ApplicationCommandType, ApplicationCommandOptionType, ActivityType, ContextMenuCommandBuilder} from "discord.js";
-import { clientId, guildId, token } from "./Discord/config.json";
+import { clientId, guildIds, token } from "./Discord/config.json";
 import Command from "./Discord/Command";
 import Commands from "./Discord/Commands"
 import { REST } from "@discordjs/rest";
@@ -47,18 +47,21 @@ export default class DiscordPlugin extends Plugin {
                 commandData.push(command.data);
             })
 
-            rest.put(
-                Routes.applicationGuildCommands(clientId, guildId),
-                { body: commandData }
-            )
-            .then(() => {
-                this.log("Successfully registered application commands!")
-                resolve(true);
-            })
-            .catch(err => {
-                this.error("Failed registering application commands!", err)
-                resolve(false);
-            })
+            for(let guild of guildIds) {
+                rest.put(
+                    Routes.applicationGuildCommands(clientId, guild),
+                    { body: commandData }
+                )
+                .then(() => {
+                    this.log("Successfully registered application commands!")
+                    resolve(true);
+                })
+                .catch(err => {
+                    this.error("Failed registering application commands!", err)
+                    resolve(false);
+                })
+            }
+
         })
     }
 
