@@ -9,7 +9,7 @@ Current official plugins: Discord and Twitch.
 
 **To use this project start by cloning the repository:**
 
-`git clone https://github.com/Dogr95/Hahnrich.git`
+`git clone https://github.com/vertiKarl/Hahnrich.git`
 
 **Then enter the created directory:**
 
