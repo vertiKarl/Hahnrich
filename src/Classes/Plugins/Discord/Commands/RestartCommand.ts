@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, Permissions, Client, Interaction, CacheType, CommandInteraction, PermissionsBitField } from "discord.js";
 import EventEmitter from "events";
 import Command from "../Command";
-import ExtendedClient from "../ExtendedClient";
 
 export default class RestartCommand extends Command {
     data = new SlashCommandBuilder();
@@ -13,7 +12,7 @@ export default class RestartCommand extends Command {
         .setName("restart")
         .setDescription("Restarts Hahnrich")
     }
-    async execute(client: ExtendedClient, interaction: CommandInteraction, events?: EventEmitter): Promise<boolean> {
+    async execute(client: Client, interaction: CommandInteraction, events?: EventEmitter): Promise<boolean> {
         if(!events) throw new Error("No EventEmitter, can't restart!");
 
         interaction.reply("Requesting restart o7");

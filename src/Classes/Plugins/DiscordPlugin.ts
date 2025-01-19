@@ -1,12 +1,14 @@
 import Plugin from "../Plugin";
-import { GatewayIntentBits, Partials, Interaction, SlashCommandBuilder, ApplicationCommandType, ApplicationCommandOptionType, ActivityType, ContextMenuCommandBuilder} from "discord.js";
+import { GatewayIntentBits, Partials, Interaction, SlashCommandBuilder, ApplicationCommandType, ApplicationCommandOptionType, ActivityType, ContextMenuCommandBuilder, Client} from "discord.js";
 import { clientId, guildIds, token } from "./Discord/config.json";
 import Command from "./Discord/Command";
 import Commands from "./Discord/Commands"
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
-import ExtendedClient from "./Discord/ExtendedClient";
 import EventEmitter from "events";
+import DiscordAddon from "./Discord/DiscordAddon";
+import DiscordAddons from "./Discord/DiscordAddons";
+import TTTMuter from "./Discord/TTTMuter/TTTMuter";
 
 /**
  * A plugin for interaction on the realtime chat application Discord!
@@ -15,7 +17,41 @@ export default class DiscordPlugin extends Plugin {
     name = "Discord";
     description = "A Discord-bot for Hahnrich";
     emoji = '🎮'
-    client?: ExtendedClient
+    client?: Client
+
+    addons = new Map<string, DiscordAddon>();
+
+    /**
+     * Adds a addon instance to the addons map to keep
+     * it in memory and allow runtime manipulation.
+     * @param addon A addon instance to import to addons map
+     */
+    async loadAddon(addons: DiscordAddon): Promise<void> {
+        if(!this.client) return;
+
+        this.debug("Addon '"+addons.name+"' starting!")
+        this.addons.set(addons.name, addons);
+        
+        addons.execute(this.client).then(() => {
+            this.log("Addon", addons.name, "started!");
+        }).catch(err => {
+            this.error("Addon", addons.name, "failed starting =>", err);
+        })
+    }
+
+    /**
+     * Removes Addon-instance from addons map which in turn
+     * lets it get catched by garbage collection.
+     * @param addon The addon instance to detach from addons map
+     */
+    unloadAddon(addon: DiscordAddon): void {
+        this.debug(this.addons.has(addon.name));
+        addon.stop();
+        if(this.addons.has(addon.name)) {
+            this.addons.delete(addon.name);
+            this.log("Addon "+addon.name+" unloaded!")
+        }
+    }
 
     commands = new Map<string, Command>()
 
@@ -74,7 +110,7 @@ export default class DiscordPlugin extends Plugin {
             return false
         };
 
-        const client = new ExtendedClient({
+        const client = new Client({
             intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
         })
 
@@ -93,6 +129,11 @@ export default class DiscordPlugin extends Plugin {
                             url: "https://twitch.tv/vertiKarl"
                     }]
             });
+
+            DiscordAddons.forEach((addon) => {
+                const instance = new(addon)();
+                this.loadAddon(instance);
+            })
         })
 
         client.on("RequestRestart", () => {
@@ -117,7 +158,7 @@ export default class DiscordPlugin extends Plugin {
      * @param events The eventemitter which connects the plugins
      * @returns The success-state of the processing
      */
-    async interactionHandler(client: ExtendedClient, interaction: Interaction, events: EventEmitter): Promise<void> {
+    async interactionHandler(client: Client, interaction: Interaction, events: EventEmitter): Promise<void> {
         if(!interaction.isCommand()) return;
 
         const command = this.commands.get(interaction.commandName)

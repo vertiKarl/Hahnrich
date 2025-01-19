@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, Permissions, Client, Interaction, CacheType, CommandInteraction, PermissionsBitField, ContextMenuCommandBuilder, PermissionResolvable, BaseGuildTextChannel, Message, EmbedBuilder, MessageResolvable } from "discord.js";
 import EventEmitter from "events";
 import Command from "../Command";
-import ExtendedClient from "../ExtendedClient";
 
 export default class RandomQuoteCommand extends Command {
     data = new SlashCommandBuilder();
@@ -14,7 +13,7 @@ export default class RandomQuoteCommand extends Command {
         .setDescription("Responds with a random quote from #quotes")
     }
 
-    async execute(client: ExtendedClient, interaction: CommandInteraction<CacheType>, events?: EventEmitter | undefined): Promise<boolean> {
+    async execute(client: Client, interaction: CommandInteraction<CacheType>, events?: EventEmitter | undefined): Promise<boolean> {
         await interaction.deferReply();
         const channel = client.channels.cache.get("680512808600862721");
         if(channel instanceof BaseGuildTextChannel) {
