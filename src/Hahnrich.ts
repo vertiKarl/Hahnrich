@@ -1,11 +1,9 @@
 import Module from "./Module";
 import Plugin from "./Plugin";
-import fs, { PathLike } from "fs";
-import plugins from "./Plugins";
-import modules from "./Modules";
+import fs from "fs/promises";
 import Logger from "./Utils/Logger";
 import {version} from "./version";
-import { dirname } from "path";
+import path, { dirname } from "path";
 
 const logo =`
 #     #    #    #     # #     # ######  ###  #####  #     # 
@@ -91,23 +89,66 @@ export default class Hahnrich extends Logger {
      * Initializes Hahnrich-instance and loads all enabled Plugins and Modules
      * 
      */
-    init(): void {
+    async init() {
         // Show logo
         console.log(logo.toString())
 
+        const plugins: Plugin[] = [];
+
+        this.log("Initializing Plugins");
+
+        // TODO: use something better than .. to get root path of project
+        const pluginDir = path.join(__dirname, "..", "Plugins");
+        
+        const dirs = (await fs.readdir(pluginDir, {withFileTypes: true}))
+        .filter(async dirent => dirent.isDirectory() || dirent.isSymbolicLink() && await (
+            async (): Promise<boolean> => {
+                return new Promise(async (resolve) => {
+                    return resolve((await fs.stat(path.join(pluginDir, dirent.name))).isDirectory());
+                })
+            }
+        ))
+
+        for(const dirent of dirs) {
+            this.log("Trying to import:", dirent.name);
+            try {
+                const file = await import(path.join(pluginDir, dirent.name, "/index.js"));
+                this.debug("Trying to import[2]:", file.default.name);
+                const plugin: Plugin = file.default as Plugin;
+                plugins.push(plugin);
+            } catch(err) {
+                this.error("Error importing Plugin:", dirent.name);
+                this.debug(err);
+            }
+        }
+
+        this.debug("Loading", plugins.length, "plugins.");
+        
         // Load Plugins
-        plugins.forEach(plugin => {
-            const instance = new (plugin)();
-            this.loadPlugin(instance);
+        plugins.forEach((plugin: Plugin) => {
+            this.debug("Loading", plugin.name)
+            this.loadPlugin(plugin);
         })
 
         // reference Hahnrich in the module parent class
         Module.controller = this;
 
+        const modules: Module[] = [];
+
+        (await fs.readdir("Modules", {withFileTypes: true}))
+        .filter(dirent => dirent.isDirectory())
+        .forEach(async (dirent) => {
+            try {
+                modules.push(await import("Modules/"+dirent.name+"/index.js"));
+            } catch(err) {
+                this.error("Error importing Module:", dirent.name);
+                this.debug(err);
+            }
+        })
+
         // Load Modules
         modules.forEach(module => {
-            const instance = new (module)();
-            this.loadModule(instance);
+            this.loadModule(module);
         })
 
         // start EventListener

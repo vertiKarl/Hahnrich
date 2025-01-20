@@ -11,7 +11,7 @@ export default abstract class Plugin extends Logger {
     static events = new EventEmitter();
     abstract name: string
     abstract description: string
-    abstract emoji: string
+    abstract emoji: string;
 
     abstract execute(): Promise<boolean>
     abstract stop(): void
