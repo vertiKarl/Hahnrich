@@ -1,6 +1,6 @@
 /**
  * Instances Hahnrich and starts it. 
  */
-import Hahnrich from "./Classes/Hahnrich";
+import Hahnrich from "./Hahnrich";
 
 new Hahnrich()

@@ -1,6 +1,6 @@
 import http, { Server } from 'http';
 import { API_KEY, GUILD_ID, PORT, CHANNEL_ID } from "./config.json";
-import Logger from '../../../Logger';
+import Logger from '../../../Utils/Logger';
 import DiscordAddon from '../DiscordAddon';
 import { Client, Guild } from 'discord.js';
 import chalk from 'chalk';

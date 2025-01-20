@@ -3,8 +3,19 @@ import Plugin from "./Plugin";
 import fs, { PathLike } from "fs";
 import plugins from "./Plugins";
 import modules from "./Modules";
-import Logger from "./Logger";
-import {version} from "../version";
+import Logger from "./Utils/Logger";
+import {version} from "./version";
+import { dirname } from "path";
+
+const logo =`
+#     #    #    #     # #     # ######  ###  #####  #     # 
+#     #   # #   #     # ##    # #     #  #  #     # #     # 
+#     #  #   #  #     # # #   # #     #  #  #       #     # 
+####### #     # ####### #  #  # ######   #  #       ####### 
+#     # ####### #     # #   # # #   #    #  #       #     # 
+#     # #     # #     # #    ## #    #   #  #     # #     # 
+#     # #     # #     # #     # #     # ###  #####  #     # 
+`
 
 /**
  * The top class that gets used to manage Plugins and Modules
@@ -82,7 +93,6 @@ export default class Hahnrich extends Logger {
      */
     init(): void {
         // Show logo
-        const logo = fs.readFileSync(__dirname + "/../../logo.txt", {encoding: "utf-8"})
         console.log(logo.toString())
 
         // Load Plugins

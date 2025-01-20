@@ -1,6 +1,6 @@
 import EventEmitter from "events"
 import Hahnrich from "./Hahnrich";
-import Logger from "./Logger"
+import Logger from "./Utils/Logger"
 
 /**
  * The parent class of modules to force them

@@ -1,6 +1,6 @@
 import { Client, CommandInteraction, ContextMenuCommandBuilder, PermissionResolvable, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js"
 import EventEmitter from "events"
-import Logger from "../../Logger"
+import Logger from "../../Utils/Logger"
 
 /**
  * Parent class from which commands inherit
