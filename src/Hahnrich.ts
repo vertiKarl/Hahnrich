@@ -4,6 +4,9 @@ import fs from "fs/promises";
 import Logger from "./Utils/Logger";
 import {version} from "./version";
 import path, { dirname } from "path";
+import SettingsHandler from "./Utils/SettingsHandler";
+
+const SETTINGS_PATH = path.join(__dirname, "../config.json")
 
 const logo =`
 #     #    #    #     # #     # ######  ###  #####  #     # 
@@ -21,7 +24,7 @@ const logo =`
 export default class Hahnrich extends Logger {
     plugins: Map<String, Plugin> = new Map<String, Plugin>();
     private modules: Map<String, Module> = new Map<String, Module>();
-
+    settingsHandler: SettingsHandler = new SettingsHandler(SETTINGS_PATH);
 
     emoji = '🐔'
 
@@ -29,6 +32,9 @@ export default class Hahnrich extends Logger {
         super()
         Logger.HahnrichVersion = version;
         this.init();
+        setInterval(() => {
+
+        }, 10000);
     }
 
     /**
@@ -36,14 +42,55 @@ export default class Hahnrich extends Logger {
      * it in memory and allow runtime manipulation.
      * @param plugin A plugin instance to import to plugins map
      */
-    async loadPlugin(plugin: Plugin): Promise<void> {
-        this.debug("Plugin '"+plugin.name+"' starting!")
+    loadPlugin(plugin: Plugin) {
+        this.debug("Plugin '"+plugin.name+"' starting!");
         this.plugins.set(plugin.name, plugin);
+        const settings = this.settingsHandler.getSettings();
+        const initialSettings = settings.plugins.get(plugin.name);
         
+        if(initialSettings) {
+            this.debug("Loading initial settings for", plugin.name+"\n", initialSettings);
+            plugin.settings = initialSettings;
+        }
+
+        plugin.events.on("GET_VERSION", () => {
+            this.debug("Sending version to", plugin.name, "("+version+")");
+            let a = plugin.events.emit("VERSION", version);
+        })
+        
+        
+        plugin.events.on("LOAD_SETTINGS", () => {
+            this.debug("Loading settings for", plugin.name);
+            plugin.settings = this.settingsHandler.getSettings().plugins.get(plugin.name);
+        });
+        
+        plugin.events.on("SAVE_SETTINGS", async () => {
+            this.debug("Saving settings for", plugin.name);
+            // Add plugin to handler
+            if(!this.settingsHandler.getSettings().plugins.has(plugin.name)) {
+                this.settingsHandler.addPlugin(plugin.name);
+            }
+            for(const key of Object.keys(plugin.settings)) {
+                this.debug("Changing", key, plugin.settings[key])
+                this.settingsHandler.changePluginSetting(plugin.name, key, plugin.settings[key]);
+            }
+            this.debug("New Settings:", this.settingsHandler.getSettings())
+            this.settingsHandler.writeToFile();
+        })
+        
+        plugin.events.on("RESTART", () => {
+            this.log("Stopping plugin:", plugin.name);
+            plugin.stop();
+            this.log("Waiting 5 seconds to restart:", plugin.name);
+            setTimeout(() => {
+                plugin.execute();
+            }, 5000)
+        })
+
         plugin.execute().then(() => {
             this.log("Plugin", plugin.name, "started!");
         }).catch(err => {
-            this.error("Plugin", plugin.name, "failed starting =>", err);
+            this.error("Plugin", plugin.name, "failed starting:", err);
         })
     }
 
@@ -90,10 +137,13 @@ export default class Hahnrich extends Logger {
      * 
      */
     async init() {
+        await this.settingsHandler.loadFromFile();
         // Show logo
         console.log(logo.toString())
 
         const plugins: Plugin[] = [];
+
+        this.log("Version:", version);
 
         this.log("Initializing Plugins");
 
@@ -149,18 +199,6 @@ export default class Hahnrich extends Logger {
         // Load Modules
         modules.forEach(module => {
             this.loadModule(module);
-        })
-
-        // start EventListener
-        Plugin.events.on("Restart", (plugin: Plugin) => {
-            if(!plugin) this.error("No plugin for restart specified!");
-            this.log("Restarting plugin:", plugin.name)
-            this.debug("Unloading")
-            this.unloadPlugin(plugin);
-            this.debug("Loading")
-            this.loadPlugin(plugin);
-            this.log("Done reloading plugin");
-            this.debug("Active Plugins:",JSON.stringify([...this.plugins], null, 4));
         })
     }
 }

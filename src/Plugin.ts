@@ -8,11 +8,12 @@ import Logger from "./Utils/Logger"
  * in all plugins to allow cross-communication
  */
 export default abstract class Plugin extends Logger {
-    static events = new EventEmitter();
-    abstract name: string
-    abstract description: string
+    abstract events: EventEmitter;
+    abstract name: string;
+    abstract description: string;
     abstract emoji: string;
+    abstract settings?: any;
 
-    abstract execute(): Promise<boolean>
+    abstract execute(): Promise<void>
     abstract stop(): void
 }

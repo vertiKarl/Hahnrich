@@ -1,7 +1,5 @@
 import fs from "fs";
 
-import {version} from "../version";
-
 /**
  * An abstract class to let most classes
  * inherit from. It enables objects to
@@ -13,7 +11,7 @@ export default abstract class Logger {
     
     static HahnrichVersion: string;
     
-    static isDebug = version.startsWith("devel-");
+    static isDebug: boolean = Number(process.env.DEBUG as String) === 1;
     abstract emoji: string;
 
     get time(): string {
@@ -33,7 +31,7 @@ export default abstract class Logger {
      * Only outputs to console when isDebug is true
      * @param content Content to print to debug out
      */
-    async debug(...content: any): Promise<void> {
+    debug(...content: any) {
         if(!Logger.isDebug) return;
         content = this.parseObjects(content);
         console.debug(this.emoji + " [DEBUG] ["+this.time+"]", content.join(" "))
@@ -42,7 +40,7 @@ export default abstract class Logger {
     /**
      * @param content Content to log
      */
-    async log(...content: any): Promise<void> {
+    log(...content: any) {
         content = this.parseObjects(content);
         console.log(this.emoji + " ["+this.time+"]", content.join(" "))
     }
@@ -50,7 +48,7 @@ export default abstract class Logger {
     /**
      * @param content Content to warn about
      */
-    async warn(...content: any): Promise<void> {
+    warn(...content: any) {
         content = this.parseObjects(content);
         console.warn(`\u001b[30;1m\u001b[48;5;208m${this.emoji}\u001b[0m [${this.time}]`, content.join(" "))
     }
@@ -58,7 +56,7 @@ export default abstract class Logger {
     /**
      * @param content Content to error out and log to file
      */
-    async error(...content: any): Promise<void> {
+    error(...content: any) {
         content = this.parseObjects(content);
         const text = `[${this.time}] ` + content.join(" ")
         console.error(`\u001b[1m\u001b[41;1m\u001b[38;5;231m${this.emoji}\x1b[0m` + text);

@@ -23,7 +23,7 @@
   },
   "scripts": {
     "start": "node ./dist/index.js",
-    "dev": "node npm_scripts/dev_preload.js; nodemon --ignore 'dist/*' npm_scripts/dev.ts",
+    "dev": "node npm_scripts/dev_preload.js;DEBUG=1 nodemon --ignore 'dist/*' --ignore 'config.json' npm_scripts/dev.ts",
     "build": "node npm_scripts/build_preload.js; tsc -p ."
   },
   "keywords": [],
