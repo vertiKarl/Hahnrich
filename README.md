@@ -1,4 +1,5 @@
 ![alt-text](https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/cb/cb9a41873f2065b8010afa7584803d283dd7e6ad_full.jpg "Hahnrich-Logo")
+
 # Hahnrich
 
 A typescript based client with plugin support.
@@ -16,25 +17,23 @@ Current official plugins: Discord and Twitch.
 `cd Hahnrich`
 
 **Initialize the project:**
-`npm install`
+`yarn install`
 
 ## Usage
 
 **Available scripts**
 
-Development mode: `npm run dev`
+Development mode: `yarn dev`
 
-Compile into JavaScript: `npm run build`
+Compile into JavaScript: `yarn build`
 
-Start compiled JavaScript: `npm start`
+Start compiled JavaScript: `yarn start`
 
-# Important!
+## Plugins
 
-When using plugins fill in the needed information in their config.json file respectifly.
+To install plugins like:
+Link hier einfügen
 
-Examples:
-
-Discord: src/Discord/config.json
-
-Twitch: src/Twitch/config.json
-and tokens.json in project-root
+Clone their repo, build them and symlink the dist folder into Plugins.
+So the project looks something like this:
+![](https://i.imgur.com/0FH375n.png)
