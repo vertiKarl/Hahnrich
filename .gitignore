@@ -7,3 +7,5 @@ tokens.json
 latest.log
 version.ts
 *.service
+Plugins
+Modules
