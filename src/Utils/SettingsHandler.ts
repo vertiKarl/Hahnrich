@@ -30,12 +30,6 @@ export default class SettingsHandler extends Logger {
     async loadFromFile() {
         let settings: Settings;
         this.debug("Reading from file", this.file)
-        if(!await fs.stat(this.file)) {
-            // file does not exists
-            this.warn("File", this.file, "does not exist. Creating and loading default settings.");
-            await fs.writeFile(this.file, JSON.stringify(defaultSettings, null, 4));
-            settings = defaultSettings;
-        }
         try {
             const data = await fs.readFile(this.file, "utf-8"); 
             const json = JSON.parse(data);
@@ -46,7 +40,14 @@ export default class SettingsHandler extends Logger {
             settings = json;
             settings.plugins = map;
         } catch(err) {
-            return this.error(err);
+            if((err as any).code === "ENOENT") {
+                // file does not exists
+                this.warn("File", this.file, "does not exist. Creating and loading default settings.");
+                await fs.writeFile(this.file, JSON.stringify(defaultSettings, null, 4));
+                settings = defaultSettings;
+            } else {
+                return this.error(err);
+            }
         }
 
         this.settings = settings;
