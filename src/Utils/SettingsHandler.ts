@@ -4,11 +4,13 @@ import Logger from "./Logger";
 
 interface Settings {
     showLogo: boolean;
+    maxPluginRestarts: number;
     plugins: Map<string, any>;
 }
 
 const defaultSettings: Settings = {
     showLogo: true,
+    maxPluginRestarts: 5,
     plugins: new Map()
 }
 

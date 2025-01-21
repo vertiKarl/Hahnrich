@@ -15,5 +15,5 @@ export default abstract class Plugin extends Logger {
     abstract settings?: any;
 
     abstract execute(): Promise<void>
-    abstract stop(): void
+    abstract stop(): Promise<void>
 }

@@ -30,11 +30,25 @@ export default class Hahnrich extends Logger {
 
     constructor() {
         super()
-        Logger.HahnrichVersion = version;
         this.init();
-        setInterval(() => {
-
+        const keepAlive = setInterval(() => {
+            // Keep Hahnrich alive
+            if(!this.aliveCheck()) {
+                this.log("Exiting Hahnrich, have a nice day! :)");
+                clearInterval(keepAlive);
+            }
         }, 10000);
+    }
+
+    /**
+     * Checks if all processes exited on purpose.
+     * @returns If Hahnrich should continue to run.
+     */
+    aliveCheck(): boolean {
+        // Things to keep Hahnrich running for
+        return (
+            this.plugins.size > 0
+        )
     }
 
     /**
@@ -83,14 +97,40 @@ export default class Hahnrich extends Logger {
             plugin.stop();
             this.log("Waiting 5 seconds to restart:", plugin.name);
             setTimeout(() => {
-                plugin.execute();
+                this.startPlugin(plugin);
             }, 5000)
         })
 
-        plugin.execute().then(() => {
-            this.log("Plugin", plugin.name, "started!");
-        }).catch(err => {
-            this.error("Plugin", plugin.name, "failed starting:", err);
+        this.startPlugin(plugin);
+    }
+
+    async restartPlugin(plugin: Plugin, restartCounter: number, maxRestarts: number) {
+        this.log("Waiting for", plugin.name, "to stop.");
+        await plugin.stop();
+
+        if(restartCounter++ < maxRestarts) {
+            this.warn(`Restarting ${plugin.name}[${restartCounter}/${maxRestarts}].`)
+            this.restartPlugin(plugin, restartCounter, maxRestarts);
+        } else {
+            this.error(`Reached restart limit, plugin ${plugin.name} disabled.`);
+            this.unloadPlugin(plugin);
+        }
+    }
+
+    startPlugin(plugin: Plugin) {
+        const promise: Promise<void> = new Promise((resolve, reject) => {
+            plugin.execute().then(() => {
+                this.log("Plugin", plugin.name, "started!");
+                return resolve()
+            }).catch(err => {
+                this.error("Plugin", plugin.name, "failed starting:", err);
+                return reject()
+            });
+        });
+
+        promise.catch((err) => {
+            const maxRestarts = this.settingsHandler.getSettings().maxPluginRestarts;
+            this.restartPlugin(plugin, 0, maxRestarts);
         })
     }
 
@@ -99,36 +139,12 @@ export default class Hahnrich extends Logger {
      * lets it get catched by garbage collection.
      * @param plugin The plugin instance to detach from plugins map
      */
-    unloadPlugin(plugin: Plugin): void {
-        this.debug(this.plugins.has(plugin.name));
-        plugin.stop();
+    async unloadPlugin(plugin: Plugin) {
+        this.log("Unloading plugin:", plugin.name);
+        await plugin.stop();
         if(this.plugins.has(plugin.name)) {
             this.plugins.delete(plugin.name);
             this.log("Plugin "+plugin.name+" unloaded!")
-        }
-    }
-
-    /**
-     * Adds a module instance to the modules map to keep
-     * it in memory and allow runtime manipulation.
-     * @param module A module instance to import to plugins map
-     */
-    async loadModule(module: Module): Promise<void> {
-            this.debug("Module '"+module.name+"' starting!")
-            const success = module.execute();
-            if(!success) this.warn("Module " + module.name + " failed to start!")
-    }
-
-    /**
-     * Removes Module-instance from plugins modules which in turn
-     * lets it get catched by garbage collection.
-     * @param module The modules instance to detach from modules map
-     */
-    unloadModule(module: Module): void {
-        if(this.modules.has(module.name)) {
-            module.stop();
-            this.plugins.delete(module.name)
-            this.log("Module "+module.name+" unloaded!")
         }
     }
 
@@ -178,27 +194,6 @@ export default class Hahnrich extends Logger {
         plugins.forEach((plugin: Plugin) => {
             this.debug("Loading", plugin.name)
             this.loadPlugin(plugin);
-        })
-
-        // reference Hahnrich in the module parent class
-        Module.controller = this;
-
-        const modules: Module[] = [];
-
-        (await fs.readdir("Modules", {withFileTypes: true}))
-        .filter(dirent => dirent.isDirectory())
-        .forEach(async (dirent) => {
-            try {
-                modules.push(await import("Modules/"+dirent.name+"/index.js"));
-            } catch(err) {
-                this.error("Error importing Module:", dirent.name);
-                this.debug(err);
-            }
-        })
-
-        // Load Modules
-        modules.forEach(module => {
-            this.loadModule(module);
         })
     }
 }
