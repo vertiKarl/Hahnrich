@@ -32,7 +32,7 @@ Start compiled JavaScript: `yarn start`
 ## Plugins
 
 To install plugins like:
-Link hier einfügen
+https://github.com/vertiKarl/Hahnrich-Discord
 
 Clone their repo, build them and symlink the dist folder into Plugins.
 So the project looks something like this:

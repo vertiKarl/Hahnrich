@@ -8,9 +8,6 @@ import fs from "fs";
  * as well.
  */
 export default abstract class Logger {
-    
-    static HahnrichVersion: string;
-    
     static isDebug: boolean = Number(process.env.DEBUG as String) === 1;
     abstract emoji: string;
 
