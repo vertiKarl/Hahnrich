@@ -1,5 +1,5 @@
-import EventEmitter from "events"
-import Logger from "./Utils/Logger"
+import EventEmitter from "events";
+import Logger from "@vertikarl/ts-logger";
 
 /**
  * The parent class of plugins to force them
@@ -8,12 +8,12 @@ import Logger from "./Utils/Logger"
  * in all plugins to allow cross-communication
  */
 export default abstract class Plugin extends Logger {
-    abstract events: EventEmitter;
-    abstract name: string;
-    abstract description: string;
-    abstract emoji: string;
-    abstract settings?: any;
+  abstract events: EventEmitter;
+  abstract name: string;
+  abstract description: string;
+  abstract emoji: string;
+  abstract settings?: any;
 
-    abstract execute(): Promise<void>
-    abstract stop(): Promise<void>
+  abstract execute(): Promise<void>;
+  abstract stop(): Promise<void>;
 }
